@@ -4,7 +4,7 @@ import os
 import boto3
 
 
-TABLE = os.environ.get('ProgressTable', 'pxm-test-Watchbot-progress')
+TABLE = os.environ.get('ProgressTable', 'test-Watchbot-progress')
 dynamodb = boto3.resource('dynamodb')
 
 table = dynamodb.create_table(
