@@ -26,7 +26,7 @@ ECS watchbot's reduce mode allows you to break up a large job into smaller parts
 
 Here's an example Python worker script for implementing the three steps of a map reduce job: **start, map and reduce**. The `$Subject` environment variable specifies which step:
 
-```
+```python
 import os
 
 # Note the clean distinction between reduce-mode helpers and processing logic
