@@ -4,10 +4,15 @@ from concurrent import futures
 from contextlib import contextmanager
 from functools import partial
 import json
+import logging
 import os
 import uuid
 
 import boto3
+
+
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
 
 
 class WatchbotProgress(object):
@@ -42,8 +47,6 @@ class WatchbotProgress(object):
         -------
         dict, similar to JS watchbot-progress.status object
         """
-        print(f'DB get status of {jobid}')
-
         res = self.db.get_item(
             Key={'id': jobid}, ConsistentRead=True)
         item = res['Item']
@@ -74,7 +77,6 @@ class WatchbotProgress(object):
         Based on watchbot-progress.setTotal
         """
         total = len(parts)
-        print(f'DB set total for {jobid} to {total}')
         return self.db.update_item(
             Key={
                 'id': jobid},
@@ -91,7 +93,7 @@ class WatchbotProgress(object):
 
         Based on watchbot-progress.failJob
         """
-        print(f'DB job {jobid} failed because {reason}.')
+        logger.error(f'[fail_job] {jobid} failed because {reason}.')
         self.db.update_item(
             Key={
                 'id': jobid},
@@ -104,7 +106,6 @@ class WatchbotProgress(object):
     def complete_part(self, jobid, partid):
         """Mark part as complete
         """
-        print(f'DB part {partid} is done')
         res = self.db.update_item(
             Key={
                 'id': jobid},
