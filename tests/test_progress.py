@@ -1,7 +1,7 @@
 import pytest
 from watchbot_progress import create_job, Part
 from watchbot_progress import status, set_metadata
-from mock import patch
+from unittest.mock import patch
 
 parts = [
     {'source': 'a.tif'},
@@ -41,49 +41,56 @@ def test_status_progress(client, mock_item, expected):
 
 
 @patch('watchbot_progress.db')
-def test_create_jobs(client):
-    client.update_item.return_value = None
+@patch('watchbot_progress.sns')
+def test_create_jobs(db, sns):
+    db.update_item.return_value = None
+    sns.publish.return_value = None
     with patch('watchbot_progress.uuid.uuid4', new=lambda: '000-123'):
         assert create_job(parts) == '000-123'
 
 
 @patch('watchbot_progress.db')
-def test_part_context_done(client):
+@patch('watchbot_progress.sns')
+def test_part_context_done(db, sns):
     # The status call
     item = {'Item': {'parts': [2, 3], 'total': 4}}
-    client.get_item.return_value = item
+    db.get_item.return_value = item
 
     # The complete_part call
-    client.update_item.return_value = \
+    db.update_item.return_value = \
         {'Attributes': {'parts': []}}
 
+    sns.publish.return_value = None
+
     msg = {'source': 'a.tif', 'partid': 1, 'jobid': '123'}
-    with Part(msg):
+    with Part(**msg):
         msg['source']
 
 
 @patch('watchbot_progress.db')
-def test_part_context_notdone(client):
+@patch('watchbot_progress.sns')
+def test_part_context_notdone(db, sns):
     item = {'Item': {'parts': [2, 3], 'total': 4}}
-    client.get_item.return_value = item
-    client.update_item.return_value = \
+    db.get_item.return_value = item
+    db.update_item.return_value = \
         {'Attributes': {'parts': [0, 1, 2]}}
 
     msg = {'source': 'a.tif', 'partid': 1, 'jobid': '123'}
-    with Part(msg):
+    with Part(**msg):
         msg['source']
 
 
 @patch('watchbot_progress.db')
-def test_part_exception(client):
+@patch('watchbot_progress.sns')
+def test_part_exception(db, sns):
     item = {'Item': {'parts': [2, 3], 'total': 4}}
-    client.get_item.return_value = item
+    db.get_item.return_value = item
 
-    client.update_item.return_value = \
+    db.update_item.return_value = \
         {'Attributes': {'parts': [0, 1, 2]}}
 
     msg = {'source': 'a.tif', 'partid': 1, 'jobid': '123'}
-    with Part(msg):
+    with Part(**msg):
         raise Exception()
 
 
@@ -92,27 +99,27 @@ def test_part_exception(client):
     {'source': 'a.tif', 'jobid': '1'},
 ])
 def test_part_bad(msg):
-    with pytest.raises(KeyError):
-        with Part(msg):
+    with pytest.raises(TypeError):
+        with Part(**msg):
             pass
 
 
 @patch('watchbot_progress.db')
-def test_part_jobfailed(client):
+def test_part_jobfailed(db):
     item = {'Item': {'total': 4, 'error': True}}
-    client.get_item.return_value = item
+    db.get_item.return_value = item
 
     msg = {'source': 'a.tif', 'partid': 1, 'jobid': '1'}
     with pytest.raises(RuntimeError):
-        with Part(msg):
+        with Part(**msg):
             pass
 
 
 @patch('watchbot_progress.db')
 @pytest.mark.xfail(raises=NotImplementedError)
-def test_status_part(client):
+def test_status_part(db):
     mock_item = {'Item': {'parts': [], 'total': 4}}
-    client.get_item.return_value = mock_item
+    db.get_item.return_value = mock_item
     status('123', 1)
 
 

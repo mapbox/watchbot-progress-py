@@ -3,20 +3,20 @@ from __future__ import division
 from concurrent import futures
 from contextlib import contextmanager
 from functools import partial
+import json
 import os
 import uuid
 
 import boto3
 
 
-# sns_client = boto3.client('sns')
-
-SNSTOPIC = 'arn:::sns-foo'
-REGION = 'us-east-1'
-
+# TODO remove or check at funcion invokation, not import
 TABLE = os.environ.get('ProgressTable', 'pxm-test-Watchbot-progress')
+TOPIC = os.environ.get('WorkTopic', 'arn:aws:sns:us-east-1:234858372212:pxm-test')
+
 dynamodb = boto3.resource('dynamodb')
 db = dynamodb.Table(TABLE)
+sns = boto3.client('sns')
 
 
 def status(jobid, part=None):
@@ -120,15 +120,20 @@ def set_metadata(jobid, metadata):
     raise NotImplementedError()
 
 
-def send_message(message, subject, snstopic=SNSTOPIC, region=REGION):
-    print(f'SNS Subject {subject}: {message}')
+def send_message(message, subject):
+    """Function wrapper to facilitate partial application"""
+    return sns.publish(
+        Message=json.dumps(message),
+        Subject=subject,
+        TopicArn=TOPIC)
 
 
 #
 # The main public interfaces, create_job and Part
 #
 
-def create_job(parts, jobid=None):
+
+def create_job(parts, jobid=None, table=None, workers=8):
     jobid = jobid if jobid else str(uuid.uuid4())
 
     set_total(jobid, parts)
@@ -139,24 +144,21 @@ def create_job(parts, jobid=None):
 
     _send_message = partial(send_message, subject='map')
 
-    with futures.ThreadPoolExecutor(max_workers=10) as executor:
+    with futures.ThreadPoolExecutor(max_workers=workers) as executor:
         executor.map(_send_message, annotated_parts)
 
     return jobid
 
 
 @contextmanager
-def Part(message):
-    """Context Manager for parts of an ecs-watchbot reduce job
+def Part(jobid, partid, **kwargs):
+    """Context Manager for parts of an ecs-watchbot reduce job.
 
     Params
     ------
-    message: dict, must contain a partid and jobid key
-    db: dynamodb connection info?
+    jobid
+    partid
     """
-    jobid = message['jobid']
-    partid = message['partid']
-
     if 'failed' in status(jobid):
         raise RuntimeError(f'job {jobid} already failed')
 
