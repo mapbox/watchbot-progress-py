@@ -11,11 +11,14 @@ import boto3
 
 
 # TODO remove or check at funcion invokation, not import
-TABLE = os.environ.get('ProgressTable', 'pxm-test-Watchbot-progress')
-TOPIC = os.environ.get('WorkTopic', 'arn:aws:sns:us-east-1:234858372212:pxm-test')
+TABLE = os.environ.get(
+    'ProgressTable', 'arn:aws:dynamodb:us-east-1:234858372212:table/pxm-test-Watchbot-progress')
+TABLENAME = TABLE.split(':table/')[-1]  # just name
+TOPIC = os.environ.get(
+    'WorkTopic', 'arn:aws:sns:us-east-1:234858372212:pxm-test')
 
 dynamodb = boto3.resource('dynamodb')
-db = dynamodb.Table(TABLE)
+db = dynamodb.Table(TABLENAME)
 sns = boto3.client('sns')
 
 
