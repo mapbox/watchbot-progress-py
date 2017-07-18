@@ -14,6 +14,6 @@ setup(
     packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
     install_requires=['boto3'],
     extras_require={
-        'test': ['pytest', 'pytest-cov']},
+        'test': ['pytest', 'pytest-cov', 'mock']},
     include_package_data=True,
     zip_safe=False)

@@ -1,6 +1,6 @@
 import pytest
 from watchbot_progress import create_job, Part, WatchbotProgress
-from unittest.mock import patch, PropertyMock
+from mock import patch, PropertyMock
 
 parts = [
     {'source': 'a.tif'},

@@ -1,6 +1,6 @@
 import pytest
 from watchbot_progress import WatchbotProgress
-from unittest.mock import patch
+from mock import patch
 
 parts = [
     {'source': 'a.tif'},

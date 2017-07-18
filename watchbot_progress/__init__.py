@@ -157,7 +157,7 @@ def create_job(parts, jobid=None, workers=8, table_arn=None, topic_arn=None):
     progress.set_total(jobid, parts)
 
     annotated_parts = [
-        dict(**part, partid=partid, jobid=jobid)
+        part.update(partid=partid, jobid=jobid)
         for partid, part in enumerate(parts)]
 
     # Send SNS message for each part, concurrently
