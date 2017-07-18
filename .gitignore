@@ -7,3 +7,4 @@ htmlcov/
 build/
 dist/
 setup.cfg
+*.pyc
