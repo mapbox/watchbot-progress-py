@@ -1,52 +1,61 @@
 # watchbot-progress-py
 
-**STATUS: WIP WIP WIP**
-
 `watchbot-progress-py` is a Python module for running [map-reduce jobs on ECS watchbot](https://github.com/mapbox/ecs-watchbot/blob/master/docs/reduce-mode.md)
 
-ECS watchbot's reduce mode allows you to break up a large job into smaller parts, process them individually, and roll them up into a final result. This involves **tracking the state** of the job using a database. Node and command line users can use [watchbot-progress](https://github.com/mapbox/watchbot-progress) for this task. This library brings similar functionality to Python.
+ECS watchbot's reduce mode allows you to break up a large job into smaller parts, process them individually, and roll them up into a final result. This involves tracking the state of the job using a database. Node and command line users can use [watchbot-progress](https://github.com/mapbox/watchbot-progress) for this task. This library brings similar functionality to Python users and provides a high-level interface which cleanly separates reduce-mode logic from your processing code.
 
-## Interface 
+### Low-level Interface 
 
-* Python versions of the basic function interfaces.
-    * `status(jobid, part=None)`
+The low-level interface is provided by the `WatchbotProgress` class.
+
+```python
+progress =  WatchbotProgress(table_arn=..., topic_arn=...)
+```
+
+If the AWS ARNs are not specified, the SNS topic and the DynamoDB table will be determined from the `WorkTopic` and `ProgressTable` environment variables.
+
+An instance of `WatchbotProgress` has methods which implement the same functionality as the JavaScript functions in `watchbot_progress`:
+
+    * `status(jobid)`
     * `set_total(jobid, parts)`
     * `fail_job(jobid, reason)`
     * `complete_part(jobid, partid)`
-    * `set_metadata(jobid, metadata)` (*not implemented yet*)
 
-* Additional high-level features that allow for cleanly separating AWS-interactions from processing code 
-    * Functions
-        * `send_message(message, subject, snstopic=SNSTOPIC, region=REGION)`
-        * `create_job(parts, jobid=None)`
-    * Context Managers
-        * `with Part(message): ...`
+### High-level interface (recommended)
 
-## Examples
+The high-level interface allows you to cleanly separating AWS-interactions from processing code.
+
+* The `create_job` function breaks a list of parts into separate jobs and handles the details of reduce-mode accounting.
+
+* The `Part` context manager wraps the processing of each part, and handles all cases such as failures, success and completion of the overall job.
+
+## Example
 
 Here's an example Python worker script for implementing the three steps of a map reduce job: **start, map and reduce**. The `$Subject` environment variable specifies which step:
 
 ```python
 import os
 
-# Note the clean distinction between reduce-mode helpers and processing logic
+# Note the distinction between reduce-mode helpers..
 from watchbot_progress import Part, create_job
+# ... and processing logic
 from mymodule import break_job_into_parts, process_part
 
 subject = os.environ['Subject']
-message = os.environ['Message']
+message = json.loads(os.environ['Message'])
 
 if subject == 'start':
+    # Each part is a dictionary with keys of your chosing
     parts = break_job_into_parts(message)
     jobid = create_job(parts)
 
 elif subject == "map":
-    with Part(message):
-        partid = message['partid']
-        jobid = message['partid']
+    jobid = message['jobid']
+    partid = message['partid']
+    with Part(jobid, partid):
         process_part(message)
 
 elif subject = "reduce":
-    jobid = message['partid']
+    jobid = message['jobid']
     print(f'DONE with {jobid}')
 ```
