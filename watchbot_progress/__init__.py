@@ -92,7 +92,7 @@ class WatchbotProgress(object):
 
         Based on watchbot-progress.failJob
         """
-        logger.error(f'[fail_job] {jobid} failed because {reason}.')
+        logger.error('[fail_job] {} failed because {}.'.format(jobid, reason))
         self.db.update_item(
             Key={
                 'id': jobid},
@@ -183,7 +183,7 @@ def Part(jobid, partid, table_arn=None, topic_arn=None, **kwargs):
     progress = WatchbotProgress(table_arn=table_arn, topic_arn=topic_arn)
 
     if 'failed' in progress.status(jobid):
-        raise RuntimeError(f'job {jobid} already failed')
+        raise RuntimeError('job {} already failed'.format(jobid))
 
     try:
         # yield control to the context block which processes the message
