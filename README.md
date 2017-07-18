@@ -16,18 +16,22 @@ If the AWS ARNs are not specified, the SNS topic and the DynamoDB table will be 
 
 An instance of `WatchbotProgress` has methods which implement the same functionality as the JavaScript functions in `watchbot_progress`:
 
-    * `status(jobid)`
-    * `set_total(jobid, parts)`
-    * `fail_job(jobid, reason)`
-    * `complete_part(jobid, partid)`
+* `progress.status(jobid)` returns a dictionary with the job status.
+* `progress.set_total(jobid, parts)` sets the total number of parts for a reduce job.
+* `progress.fail_job(jobid, reason)` marks the job as failed.
+* `progress.complete_part(jobid, partid)` updates the database to mark the part as completed.
 
 ### High-level interface (recommended)
 
-The high-level interface allows you to cleanly separating AWS-interactions from processing code.
+The high-level interface allows you to cleanly separate AWS-interactions from processing code.
 
 * The `create_job` function breaks a list of parts into separate jobs and handles the details of reduce-mode accounting.
 
 * The `Part` context manager wraps the processing of each part, and handles all cases such as failures, success and completion of the overall job.
+
+There are a few basic rules to using the high-level interface:
+
+1. Each **part** 
 
 ## Example
 

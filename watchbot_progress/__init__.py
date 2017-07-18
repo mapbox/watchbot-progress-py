@@ -47,8 +47,7 @@ class WatchbotProgress(object):
         -------
         dict, similar to JS watchbot-progress.status object
         """
-        res = self.db.get_item(
-            Key={'id': jobid}, ConsistentRead=True)
+        res = self.db.get_item(Key={'id': jobid}, ConsistentRead=True)
         item = res['Item']
         remaining = len(item['parts']) if 'parts' in item else 0
         percent = (item['total'] - remaining) / item['total']
@@ -105,6 +104,11 @@ class WatchbotProgress(object):
 
     def complete_part(self, jobid, partid):
         """Mark part as complete
+
+        Returns
+        -------
+        boolean
+            Is the overall job completed yet?
         """
         res = self.db.update_item(
             Key={
@@ -186,6 +190,7 @@ def Part(jobid, partid, table_arn=None, topic_arn=None, **kwargs):
         yield
     except:
         progress.fail_job(jobid, partid)
+        raise
     else:
         all_done = progress.complete_part(jobid, partid)
         if all_done:
