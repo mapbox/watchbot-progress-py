@@ -1,0 +1,6 @@
+language: python
+python:
+  - "2.7"
+  - "3.6"
+install: "pip install -e .[test]"
+script: "py.test -v --cov watchbot_progress --cov-report term-missing tests/"
