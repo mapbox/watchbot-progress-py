@@ -29,7 +29,7 @@ The high-level interface allows you to cleanly separate AWS-interactions from pr
 
 * The `Part` context manager wraps the processing of each part, and handles all cases such as failures, success and completion of the overall job.
 
-The only restriction is that each **part** must be a mutable mapping (e.g. a dictionary) which is json serializable. The watchbot_progress functions will append the `jobid` and `partid` keys to the dictionary for accounting purposes and are not allowed. All other keys are yours to choose, provided their values can be used in `json.dumps`.
+The only restriction is that each **part** must be a mutable mapping (e.g. a dictionary) which is json serializable. The watchbot_progress functions will append the `jobid` and `partid` keys to the dictionary for accounting purposes. All other key names are yours to choose, provided their values can be used in `json.dumps`.
 
 ## Example
 
