@@ -1,5 +1,7 @@
 # watchbot-progress-py
 
+[![Build Status](https://travis-ci.org/mapbox/watchbot-progress-py.svg?branch=master)](https://travis-ci.org/mapbox/watchbot-progress-py)
+
 `watchbot-progress-py` is a Python module for running [map-reduce jobs on ECS watchbot](https://github.com/mapbox/ecs-watchbot/blob/master/docs/reduce-mode.md)
 
 ECS watchbot's reduce mode allows you to break up a large job into smaller parts, process them individually, and roll them up into a final result. This involves tracking the state of the job using a database. Node and command line users can use [watchbot-progress](https://github.com/mapbox/watchbot-progress) for this task. This library brings similar functionality to Python users and provides a high-level interface which cleanly separates reduce-mode logic from your processing code.
