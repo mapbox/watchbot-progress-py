@@ -4,7 +4,9 @@ python:
   - "3.6"
 env:
   - AWS_DEFAULT_REGION=us-east-1
-install: "pip install -e .[test]"
+install: 
+  - "pip install -e .[test]"
+  - "pip install coveralls"
 script: "py.test -v --cov watchbot_progress --cov-report term-missing tests/"
 after_success:
   - coveralls || echo "intermittent coveralls failure"
