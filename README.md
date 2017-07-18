@@ -1,6 +1,7 @@
 # watchbot-progress-py
 
 [![Build Status](https://travis-ci.org/mapbox/watchbot-progress-py.svg?branch=master)](https://travis-ci.org/mapbox/watchbot-progress-py)
+[![Coverage Status](https://coveralls.io/repos/github/mapbox/watchbot-progress-py/badge.svg)](https://coveralls.io/github/mapbox/watchbot-progress-py)
 
 `watchbot-progress-py` is a Python module for running [map-reduce jobs on ECS watchbot](https://github.com/mapbox/ecs-watchbot/blob/master/docs/reduce-mode.md)
 
