@@ -127,7 +127,7 @@ class WatchbotProgress(object):
             Key={'id': jobid},
             ExpressionAttributeNames={'#m': 'metadata'},
             ExpressionAttributeValues={':m': metadata},
-            UpdateExpression='set #m :m')
+            UpdateExpression='set #m = :m')
 
     def send_message(self, message, subject):
         """Function wrapper to facilitate partial application"""
