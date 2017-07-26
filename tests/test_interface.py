@@ -25,6 +25,9 @@ class MockBase(WatchbotProgress):
     def send_message(self, message, subject):
         return True
 
+    def set_metadata(self, jobid, metdata):
+        return None
+
 
 def test_create_jobs(monkeypatch):
     monkeypatch.setenv('WorkTopic', 'abc123')
@@ -104,3 +107,17 @@ def test_Part_already_failed(monkeypatch):
                 # sees that the overall job failed and will not execute this code
                 raise NotImplementedError("You'll never get here")
         assert 'already failed' in str(e)
+
+
+def test_create_jobs_metadata(monkeypatch):
+    monkeypatch.setenv('WorkTopic', 'abc123')
+    monkeypatch.setenv('ProgressTable', 'arn::table/foo')
+
+    class MockProgress(MockBase):
+        pass
+
+    meta = {'foo': 'bar'}
+
+    with patch('watchbot_progress.uuid.uuid4', new=lambda: '000-123'):
+        with patch('watchbot_progress.WatchbotProgress', new=MockProgress):
+            assert create_job(parts, metadata=meta) == '000-123'

@@ -92,3 +92,14 @@ def test_incomplete_part(client, monkeypatch):
     client.return_value.Table.return_value.update_item.return_value = item
     s = WatchbotProgress().complete_part('123', 1)
     assert s is False
+
+
+@patch('watchbot_progress.boto3.resource')
+def test_set_metadata(client, monkeypatch):
+    monkeypatch.setenv('WorkTopic', 'abc123')
+    monkeypatch.setenv('ProgressTable', 'arn::table/foo')
+
+    item = 'sentinel'
+    client.return_value.Table.return_value.update_item.return_value = item
+    WatchbotProgress().set_metadata('123', {'a': 1})
+    assert client.called
