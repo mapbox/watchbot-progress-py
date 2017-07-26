@@ -77,8 +77,7 @@ class WatchbotProgress(object):
         """
         total = len(parts)
         return self.db.update_item(
-            Key={
-                'id': jobid},
+            Key={'id': jobid},
             ExpressionAttributeNames={
                 '#p': 'parts',
                 '#t': 'total'},
@@ -94,12 +93,9 @@ class WatchbotProgress(object):
         """
         logger.error('[fail_job] {} failed because {}.'.format(jobid, reason))
         self.db.update_item(
-            Key={
-                'id': jobid},
-            ExpressionAttributeNames={
-                '#e': 'error'},
-            ExpressionAttributeValues={
-                ':e': reason},
+            Key={'id': jobid},
+            ExpressionAttributeNames={'#e': 'error'},
+            ExpressionAttributeValues={':e': reason},
             UpdateExpression='set #e = :e')
 
     def complete_part(self, jobid, partid):
@@ -111,12 +107,9 @@ class WatchbotProgress(object):
             Is the overall job completed yet?
         """
         res = self.db.update_item(
-            Key={
-                'id': jobid},
-            ExpressionAttributeNames={
-                '#p': 'parts'},
-            ExpressionAttributeValues={
-                ':p': set([partid])},
+            Key={'id': jobid},
+            ExpressionAttributeNames={'#p': 'parts'},
+            ExpressionAttributeValues={':p': set([partid])},
             UpdateExpression='delete #p :p',
             ReturnValues='ALL_NEW')
 
@@ -130,7 +123,11 @@ class WatchbotProgress(object):
     def set_metadata(self, jobid, metadata):
         """Associate arbitrary metadata with a particular map-reduce job
         """
-        raise NotImplementedError()
+        self.db.update_item(
+            Key={'id': jobid},
+            ExpressionAttributeNames={'#m': 'metadata'},
+            ExpressionAttributeValues={':m': metadata},
+            UpdateExpression='set #m :m')
 
     def send_message(self, message, subject):
         """Function wrapper to facilitate partial application"""
@@ -145,7 +142,7 @@ class WatchbotProgress(object):
 #
 
 
-def create_job(parts, jobid=None, workers=8, table_arn=None, topic_arn=None):
+def create_job(parts, jobid=None, workers=8, table_arn=None, topic_arn=None, metadata=None):
     """Create a reduce mode job
 
     Handles all the details of reduce-mode accounting (SNS, partid and jobid)
@@ -155,6 +152,9 @@ def create_job(parts, jobid=None, workers=8, table_arn=None, topic_arn=None):
 
     progress = WatchbotProgress(table_arn=table_arn, topic_arn=topic_arn)
     progress.set_total(jobid, parts)
+
+    if metadata:
+        progress.set_metadata(jobid, metadata)
 
     annotated_parts = [
         dict(partid=partid, jobid=jobid, **part)
