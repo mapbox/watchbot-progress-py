@@ -194,4 +194,9 @@ def Part(jobid, partid, table_arn=None, topic_arn=None, **kwargs):
     else:
         all_done = progress.complete_part(jobid, partid)
         if all_done:
-            progress.send_message({'jobid': jobid}, subject='reduce')
+            status = progress.status(jobid)
+            metadata = status.get('metadata', None)
+            message = {
+                'jobid': jobid,
+                'metadata': metadata}
+            progress.send_message(message, subject='reduce')
