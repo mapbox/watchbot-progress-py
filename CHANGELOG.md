@@ -1,6 +1,6 @@
 0.2.1
 -----
-- send metadata with reduce message #5
+- send metadata with map and reduce messages #5
 
 0.2.0
 -----
