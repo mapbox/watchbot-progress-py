@@ -156,9 +156,12 @@ def create_job(parts, jobid=None, workers=8, table_arn=None, topic_arn=None, met
     if metadata:
         progress.set_metadata(jobid, metadata)
 
-    annotated_parts = [
-        dict(partid=partid, jobid=jobid, **part)
-        for partid, part in enumerate(parts)]
+    annotated_parts = []
+    for partid, part in enumerate(parts):
+        part.update(partid=partid)
+        part.update(jobid=jobid)
+        part.update(metadata=metadata)
+        annotated_parts.append(part)
 
     # Send SNS message for each part, concurrently
     _send_message = partial(progress.send_message, subject='map')
@@ -194,4 +197,9 @@ def Part(jobid, partid, table_arn=None, topic_arn=None, **kwargs):
     else:
         all_done = progress.complete_part(jobid, partid)
         if all_done:
-            progress.send_message({'jobid': jobid}, subject='reduce')
+            status = progress.status(jobid)
+            metadata = status.get('metadata', None)
+            message = {
+                'jobid': jobid,
+                'metadata': metadata}
+            progress.send_message(message, subject='reduce')
