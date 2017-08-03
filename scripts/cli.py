@@ -6,16 +6,16 @@ import re
 
 def format_response(item):
     pct_done = 1.
-    total_jobs = int(item['total'])
+    total_parts = int(item['total'])
     metadata = item.get('metadata', {})
     pending_parts = item.get('parts', [])
-    jobs_done = (total_jobs - len([int(i) for i in pending_parts]))
+    parts_done = (total_parts - len([int(i) for i in pending_parts]))
 
     return {
         'id': item['id'],
-        'total_jobs': total_jobs,
-        'jobs_done': jobs_done,
-        'pct_done': '{:.2f}%'.format(jobs_done / total_jobs * 100),
+        'total_parts': total_parts,
+        'parts_done': parts_done,
+        'pct_done': '{:.2f}%'.format(parts_done / total_parts * 100),
         'metadata': metadata
     }
 
