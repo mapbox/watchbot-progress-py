@@ -13,7 +13,11 @@ setup(
     license='MIT',
     packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
     install_requires=['boto3'],
+    entry_points="""
+      [console_scripts]
+      watchbot-progress-py=scripts.cli:main
+      """,
     extras_require={
-        'test': ['pytest', 'pytest-cov', 'mock']},
+        'test': ['pytest', 'pytest-cov', 'mock', 'click']},
     include_package_data=True,
     zip_safe=False)
