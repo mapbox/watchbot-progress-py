@@ -9,12 +9,13 @@ def format_response(item):
     total_jobs = int(item['total'])
     metadata = item.get('metadata', {})
     pending_parts = item.get('parts', [])
-    pending_parts = [int(i) for i in pending_parts]
+    jobs_done = (total_jobs - len([int(i) for i in pending_parts]))
 
     return {
         'id': item['id'],
         'total_jobs': total_jobs,
-        'pct_done': '{:.2f}%'.format((total_jobs - len(pending_parts)) / total_jobs * 100),
+        'jobs_done': jobs_done,
+        'pct_done': '{:.2f}%'.format(jobs_done / total_jobs * 100),
         'metadata': metadata
     }
 
@@ -42,8 +43,8 @@ def info(table, jobid):
 
 @main.command()
 @click.argument('table', type=str)
-@click.option('--show-completed', is_flag=True)
-def ls(table, show_completed):
+@click.option('--hide-completed', is_flag=True)
+def ls(table, hide_completed):
     '''Scans the table and lists all pending jobs
     '''
     dynamodb = boto3.resource('dynamodb')
@@ -53,7 +54,7 @@ def ls(table, show_completed):
 
     for s in scan['Items']:
         response = format_response(s)
-        if show_completed or response['pct_done'] != '100.00%':
+        if not hide_completed or response['pct_done'] != '100.00%':
             click.echo(json.dumps(response))
 
 if __name__ == '__main__':
