@@ -3,9 +3,32 @@ import click
 import boto3
 import re
 
-
 def format_response(item):
-    pct_done = 1.
+    '''Given a response item from a watchbot-progress style
+    job record, format and return information as to the job's
+    progress.
+
+    Parameters
+    -----------
+    item: dynamodb dictionary
+        response item representing a watchbot-progress
+        job.
+        Required keys: "total", "id"
+        Optional keys: "metadata", "parts"
+
+    Returns
+    --------
+    metadata: dictionary
+        formatted status information
+        ```
+        {
+            'id': <job id>,
+            'total_parts': <[int] total number of parts>,
+            'parts_done': <[int] number of completed parts>,
+            'pct_done': <[str] human-readable percent complete>,
+            'metadata': <[dict] any job metadata>
+        }
+    '''
     total_parts = int(item['total'])
     metadata = item.get('metadata', {})
     pending_parts = item.get('parts', [])
@@ -19,6 +42,7 @@ def format_response(item):
         'metadata': metadata
     }
 
+
 @click.group()
 def main():
     pass
@@ -28,6 +52,7 @@ def main():
 @click.argument('jobid', type=str)
 def info(table, jobid):
     '''Returns the progress of a specific jobid
+    for a watchbot-progress job
     '''
     dynamodb = boto3.resource('dynamodb')
     db = dynamodb.Table(table)
@@ -41,11 +66,14 @@ def info(table, jobid):
 
     click.echo(json.dumps(jobinfo))
 
+
 @main.command()
 @click.argument('table', type=str)
 @click.option('--hide-completed', is_flag=True)
-def ls(table, hide_completed):
-    '''Scans the table and lists all pending jobs
+@click.option('--hide-pending', is_flag=True)
+def ls(table, hide_completed, hide_pending):
+    '''Scans the given watchbot-progress table
+    and returns their individual progress info
     '''
     dynamodb = boto3.resource('dynamodb')
     db = dynamodb.Table(table)
@@ -54,8 +82,8 @@ def ls(table, hide_completed):
 
     for s in scan['Items']:
         response = format_response(s)
-        if not hide_completed or response['pct_done'] != '100.00%':
-            click.echo(json.dumps(response))
+        if (not hide_completed or response['pct_done'] != '100.00%') or ():
+            click.secho(json.dumps(response))
 
 if __name__ == '__main__':
     main()
