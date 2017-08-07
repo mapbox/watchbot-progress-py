@@ -1,3 +1,7 @@
+0.3.0
+-----
+- `watchbot-progress-py` command line interface for tracking jobs
+
 0.2.1
 -----
 - send metadata with map and reduce messages #5
