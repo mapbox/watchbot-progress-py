@@ -1,7 +1,10 @@
+from __future__ import division
+
 import json
 import click
 import boto3
 import re
+
 
 def format_response(item):
     '''Given a response item from a watchbot-progress style
@@ -28,6 +31,7 @@ def format_response(item):
             'pct_done': <[str] human-readable percent complete>,
             'metadata': <[dict] any job metadata>
         }
+        ```
     '''
     total_parts = int(item['total'])
     metadata = item.get('metadata', {})
@@ -70,8 +74,7 @@ def info(table, jobid):
 @main.command()
 @click.argument('table', type=str)
 @click.option('--hide-completed', is_flag=True)
-@click.option('--hide-pending', is_flag=True)
-def ls(table, hide_completed, hide_pending):
+def ls(table, hide_completed):
     '''Scans the given watchbot-progress table
     and returns their individual progress info
     '''
@@ -82,8 +85,8 @@ def ls(table, hide_completed, hide_pending):
 
     for s in scan['Items']:
         response = format_response(s)
-        if (not hide_completed or response['pct_done'] != '100.00%') or ():
-            click.secho(json.dumps(response))
+        if (not hide_completed or response['pct_done'] != '100.00%'):
+            click.echo(json.dumps(response))
 
 if __name__ == '__main__':
     main()
