@@ -65,3 +65,26 @@ elif subject = "reduce":
     jobid = message['jobid']
     print(f'DONE with {jobid}')
 ```
+## CLI
+A `cli` is provided to check the status of jobs in a table.
+
+### Get the status of a specific jobid:
+```
+Usage: watchbot-progress-py info [OPTIONS] TABLE JOBID
+
+  Returns the progress of a specific jobid for a watchbot-progress job
+
+Options:
+  --help  Show this message and exit.
+```
+### Get the status of all jobs in a table:
+```
+Usage: watchbot-progress-py ls [OPTIONS] TABLE
+
+  Scans the given watchbot-progress table and returns their individual
+  progress info
+
+Options:
+  --hide-completed
+  --help            Show this message and exit.
+```
