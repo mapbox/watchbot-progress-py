@@ -92,7 +92,9 @@ def ls(table, hide_completed):
 @main.command()
 @click.argument('table', type=str)
 @click.argument('jobid', type=str)
-def pending(table, jobid):
+@click.option('--array', is_flag=True,
+    help='Output as JSON array [Default: line-delimited]')
+def pending(table, jobid, array):
     '''Streams out all pending
     part numbers for a given jobid
     '''
@@ -109,8 +111,11 @@ def pending(table, jobid):
     if len(pending) == 0:
         click.echo('No parts remaining in {jobid}'.format(jobid=jobid))
 
-    for p in pending:
-        click.echo(int(p))
+    if array:
+        click.echo(json.dumps([int(p) for p in pending]))
+    else:
+        for p in pending:
+            click.echo(int(p))
 
 
 if __name__ == '__main__':
