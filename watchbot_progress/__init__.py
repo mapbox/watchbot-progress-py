@@ -142,7 +142,8 @@ class WatchbotProgress(object):
 #
 
 
-def create_job(parts, jobid=None, workers=8, table_arn=None, topic_arn=None, metadata=None):
+def create_job(parts, jobid=None, workers=8,
+               table_arn=None, topic_arn=None, metadata=None):
     """Create a reduce mode job
 
     Handles all the details of reduce-mode accounting (SNS, partid and jobid)
@@ -171,28 +172,45 @@ def create_job(parts, jobid=None, workers=8, table_arn=None, topic_arn=None, met
     return jobid
 
 
+class JobFailed(RuntimeError):
+    """Skip, the reduce mode job has already been marked as failed. """
+
+
 @contextmanager
-def Part(jobid, partid, table_arn=None, topic_arn=None, **kwargs):
-    """Context Manager for parts of an ecs-watchbot reduce job.
+def Part(jobid, partid,
+         table_arn=None, topic_arn=None, fail_job_on=(), **kwargs):
+    """Context manager to handle parts of an ecs-watchbot reduce job.
 
     Params
     ------
-    jobid
-    partid
-    table_arn
-    topic_arn
-
+    jobid: string
+        Reduce mode job
+    partid: string
+        Part number
+    fail_job_on: sequence
+        Exception classes which should mark job as failed
+    table_arn: string
+        DynamoDB Table
+    topic_arn: string
+        SNS topic
+    kwargs: dict
+        absorbs additional keywords allowing part dicts
+        to be unpacked as input to Part
+       
     """
     progress = WatchbotProgress(table_arn=table_arn, topic_arn=topic_arn)
 
-    if 'failed' in progress.status(jobid):
-        raise RuntimeError('job {} already failed'.format(jobid))
+    if fail_job_on:
+        # Only check for job failure if there are exception types to fail on
+        if 'failed' in progress.status(jobid):
+            raise JobFailed('job {} already failed'.format(jobid))
 
     try:
         # yield control to the context block which processes the message
         yield
-    except:
-        progress.fail_job(jobid, partid)
+    except Exception as err:
+        if any(isinstance(err, f) for f in fail_job_on):
+            progress.fail_job(jobid, partid)
         raise
     else:
         all_done = progress.complete_part(jobid, partid)
