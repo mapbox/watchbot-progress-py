@@ -88,5 +88,30 @@ def ls(table, hide_completed):
         if (not hide_completed or response['pct_done'] != '100.00%'):
             click.echo(json.dumps(response))
 
+
+@main.command()
+@click.argument('table', type=str)
+@click.argument('jobid', type=str)
+def pending(table, jobid):
+    '''Streams out all pending
+    part numbers for a given jobid
+    '''
+    dynamodb = boto3.resource('dynamodb')
+    db = dynamodb.Table(table)
+
+    res = db.get_item(Key={'id': jobid}, ConsistentRead=True)
+
+    if 'Error' in res or 'Item' not in res:
+        raise
+
+    pending = res['Item'].get('parts', [])
+
+    if len(pending) == 0:
+        click.echo('No parts remaining in {jobid}'.format(jobid=jobid))
+
+    for p in pending:
+        click.echo(int(p))
+
+
 if __name__ == '__main__':
     main()
