@@ -1,3 +1,8 @@
+0.4.0
+-----
+- BREAKING CHANGE: the `Part` context manager will not fail the entire job by default.
+- Added `fail_job_on`, a list exceptions which will mark the job failed.
+
 0.3.0
 -----
 - `watchbot-progress-py` command line interface for tracking jobs
