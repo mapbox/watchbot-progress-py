@@ -7,17 +7,26 @@ import logging
 import uuid
 
 from watchbot_progress.backends.dynamodb import DynamoProgress
+from watchbot_progress.backends.base import WatchbotProgressBase
+
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
+
+
+class JobFailed(RuntimeError):
+    """Skip, the reduce mode job has already been marked as failed. """
+
+
+class ProgressTypeError(TypeError):
+    """Progress argument is not of the correct type"""
 
 #
 # The main public interfaces, create_job and Part
 #
 
 
-def create_job(parts, jobid=None, workers=8,
-               progress=None, metadata=None):
+def create_job(parts, jobid=None, workers=8, progress=None, metadata=None):
     """Create a reduce mode job
 
     Handles all the details of reduce-mode accounting (SNS, partid and jobid)
@@ -32,6 +41,10 @@ def create_job(parts, jobid=None, workers=8,
     """
     if progress is None:
         progress = DynamoProgress()
+
+    if not isinstance(progress, WatchbotProgressBase):
+        raise ProgressTypeError(
+            'progress must be an instance of WatchbotProgressBase')
 
     jobid = jobid if jobid else str(uuid.uuid4())
 
@@ -55,10 +68,6 @@ def create_job(parts, jobid=None, workers=8,
     return jobid
 
 
-class JobFailed(RuntimeError):
-    """Skip, the reduce mode job has already been marked as failed. """
-
-
 @contextmanager
 def Part(jobid, partid, progress=None, fail_job_on=(), **kwargs):
     """Context manager to handle parts of an ecs-watchbot reduce job.
@@ -80,6 +89,10 @@ def Part(jobid, partid, progress=None, fail_job_on=(), **kwargs):
     """
     if progress is None:
         progress = DynamoProgress()
+
+    if not isinstance(progress, WatchbotProgressBase):
+        raise ProgressTypeError(
+            'progress must be an instance of WatchbotProgressBase')
 
     if fail_job_on:
         # Only check for job failure if there are exception types to fail on

@@ -1,5 +1,6 @@
 import pytest
-from watchbot_progress import create_job, Part, JobFailed
+from watchbot_progress import create_job, Part
+from watchbot_progress.main import JobFailed, ProgressTypeError
 from watchbot_progress.backends.base import WatchbotProgressBase
 from mock import patch
 
@@ -117,3 +118,14 @@ def test_Part_dont_fail_job_on(status, fail_job, monkeypatch):
         with Part(jobid=2, partid=2, fail_job_on=[ZeroDivisionError]):
             raise CustomException()
     fail_job.assert_not_called()
+
+
+def test_Part_bad_progress():
+    with pytest.raises(ProgressTypeError):
+        with Part(partid=1, jobid='1', progress=Exception()):
+            pass
+
+
+def test_create_bad_progress():
+    with pytest.raises(ProgressTypeError):
+        create_job(jobid='1', parts=parts, progress=Exception())
