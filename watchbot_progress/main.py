@@ -14,6 +14,10 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 
+class JobDoesNotExist(RuntimeError):
+    """The reduce mode job doesn't exist (set_total has not been run). """
+
+
 class JobFailed(RuntimeError):
     """Skip, the reduce mode job has already been marked as failed. """
 

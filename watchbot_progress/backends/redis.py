@@ -8,6 +8,7 @@ import boto3
 import redis
 
 from watchbot_progress.backends.base import WatchbotProgressBase
+from watchbot_progress.main import JobDoesNotExist
 
 
 logger = logging.getLogger(__name__)
@@ -24,13 +25,17 @@ class RedisProgress(WatchbotProgressBase):
         self.topic = topic_arn if topic_arn else os.environ['WorkTopic']
 
         # Redis
-        self.redis = redis.StrictRedis(host=host, port=port, db=db, decode_responses=True)
+        self.redis = redis.StrictRedis(host=host, port=port, db=db)
 
     def _metadata_key(self, jobid):
         return f'{jobid}-metadata'
 
     def _parts_key(self, jobid):
         return f'{jobid}-parts'
+
+    def _decode_dict(self, meta):
+        return {k.decode('utf-8'): v.decode('utf-8')
+                for k, v in meta.items()}
 
     def status(self, jobid, part=None):
         """get status from dynamodb
@@ -39,30 +44,38 @@ class RedisProgress(WatchbotProgressBase):
         ----------
         jobid: string?
         part: optional int
+            return status of the given partid
 
         Returns
         -------
         dict, similar to JS watchbot-progress.status object
         """
         if part is not None:
-            raise NotImplementedError()
+            is_member = self.redis.sismember(self._parts_key(jobid), part)
+            return {
+                'part': part,
+                'complete': not bool(is_member)}
 
         pipe = self.redis.pipeline()
         pipe.hgetall(self._metadata_key(jobid))
         pipe.scard(self._parts_key(jobid))
         meta, remaining = pipe.execute()
 
-        total = int(meta['total'])
-        percent = (total - remaining) / total
-        data = {'progress': percent}
+        meta = self._decode_dict(meta)
+        try:
+            total = int(meta['total'])
+        except KeyError:
+            raise JobDoesNotExist('Job does not exist, run set_total first')
 
-        if 'error' in meta:
-            # failure must have a 'failed' key
-            data['failed'] = meta['error']
-        if 'metadata' in meta:
-            data['metadata'] = meta['metadata']
-        if 'reduceSent' in meta:
-            data['reduceSent'] = meta['reduceSent']
+        percent = (total - remaining) / total
+        data = meta.copy()
+        data.update(
+            progress=percent,
+            total=total,
+            remaining=remaining)
+
+        if 'failed' in data:
+            data['failed'] = (data['failed'] == '1')
 
         return data
 
@@ -85,6 +98,7 @@ class RedisProgress(WatchbotProgressBase):
         Based on watchbot-progress.failJob
         """
         logger.error('[fail_job] {} failed because {}.'.format(jobid, reason))
+        self.redis.hset(self._metadata_key(jobid), 'error', reason)
         self.redis.hset(self._metadata_key(jobid), 'failed', 1)
 
     def complete_part(self, jobid, partid):
@@ -97,9 +111,10 @@ class RedisProgress(WatchbotProgressBase):
         """
         # Delete and count, atomically
         pipe = self.redis.pipeline()
-        pipe.srem(jobid, partid)
-        pipe.scard(jobid)
+        pipe.srem(self._parts_key(jobid), partid)
+        pipe.scard(self._parts_key(jobid))
         _, remaining = pipe.execute()
+
         return remaining == 0
 
     def set_metadata(self, jobid, metadata):
