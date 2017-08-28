@@ -1,3 +1,5 @@
+from __future__ import division
+
 from mock import patch
 
 from mockredis import mock_strict_redis_client
