@@ -15,17 +15,19 @@ def parts():
         {'source': 'c.tif'}]
 
 
-def test_status_no_total():
+def test_status_no_total(monkeypatch):
     """ Have not created a job with .set_total() yet
     """
+    monkeypatch.setenv('WorkTopic', 'abc123')
     with patch('redis.StrictRedis', mock_strict_redis_client):
         with pytest.raises(JobDoesNotExist):
             RedisProgress().status('123')
 
 
-def test_status(parts):
+def test_status(parts, monkeypatch):
     """New job shows all parts remaining
     """
+    monkeypatch.setenv('WorkTopic', 'abc123')
     with patch('redis.StrictRedis', mock_strict_redis_client):
         p = RedisProgress()
         p.set_total('123', parts)
@@ -35,9 +37,10 @@ def test_status(parts):
         assert status['progress'] == 0
 
 
-def test_status_part(parts):
+def test_status_part(parts, monkeypatch):
     """Check if part is complete
     """
+    monkeypatch.setenv('WorkTopic', 'abc123')
     with patch('redis.StrictRedis', mock_strict_redis_client):
         p = RedisProgress()
         p.set_total('123', parts)
@@ -47,9 +50,10 @@ def test_status_part(parts):
         assert p.status('123', part=1)['complete'] is False
 
 
-def test_status_complete_some(parts):
+def test_status_complete_some(parts, monkeypatch):
     """job shows partial progress
     """
+    monkeypatch.setenv('WorkTopic', 'abc123')
     with patch('redis.StrictRedis', mock_strict_redis_client):
         p = RedisProgress()
         p.set_total('123', parts)
@@ -62,9 +66,10 @@ def test_status_complete_some(parts):
         assert status['progress'] == 1 / 3
 
 
-def test_status_complete_some(parts):
-    """job shows partial progress
+def test_status_complete_all(parts, monkeypatch):
+    """job shows complete progress
     """
+    monkeypatch.setenv('WorkTopic', 'abc123')
     with patch('redis.StrictRedis', mock_strict_redis_client):
         p = RedisProgress()
         p.set_total('123', parts)
@@ -78,9 +83,10 @@ def test_status_complete_some(parts):
         assert status['progress'] == 1.0
 
 
-def test_failjob(parts):
+def test_failjob(parts, monkeypatch):
     """Mark job as failed works
     """
+    monkeypatch.setenv('WorkTopic', 'abc123')
     with patch('redis.StrictRedis', mock_strict_redis_client):
         p = RedisProgress()
         p.set_total('123', parts)
@@ -88,9 +94,10 @@ def test_failjob(parts):
         assert p.status('123')['failed'] is True
 
 
-def test_metadata(parts):
+def test_metadata(parts, monkeypatch):
     """Setting and getting job metadata works
     """
+    monkeypatch.setenv('WorkTopic', 'abc123')
     with patch('redis.StrictRedis', mock_strict_redis_client):
         p = RedisProgress()
         p.set_total('123', parts)
