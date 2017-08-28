@@ -12,7 +12,7 @@ setup(
     url='https://github.com/mapbox/watchbot-progress-py',
     license='MIT',
     packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
-    install_requires=['boto3'],
+    install_requires=['boto3', 'redis'],
     entry_points="""
       [console_scripts]
       watchbot-progress-py=scripts.cli:main
