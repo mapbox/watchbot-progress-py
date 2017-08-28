@@ -28,10 +28,10 @@ class RedisProgress(WatchbotProgressBase):
         self.redis = redis.StrictRedis(host=host, port=port, db=db)
 
     def _metadata_key(self, jobid):
-        return f'{jobid}-metadata'
+        return '{}-metadata'.format(jobid)
 
     def _parts_key(self, jobid):
-        return f'{jobid}-parts'
+        return '{}-parts'.format(jobid)
 
     def _decode_dict(self, meta):
         return {k.decode('utf-8'): v.decode('utf-8')
