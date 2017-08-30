@@ -126,6 +126,10 @@ class RedisProgress(WatchbotProgressBase):
 
     def send_message(self, message, subject):
         """Function wrapper to facilitate partial application"""
+        import sys
+        print(subject, file=sys.stderr)
+        print(message, file=sys.stderr)
+        print(self.topic, file=sys.stderr)
         return self.sns.publish(
             Message=json.dumps(message),
             Subject=subject,
