@@ -6,7 +6,7 @@ from mockredis import mock_strict_redis_client
 import pytest
 
 from watchbot_progress.backends.redis import RedisProgress
-from watchbot_progress.main import JobDoesNotExist
+from watchbot_progress.errors import JobDoesNotExist
 
 
 @pytest.fixture()

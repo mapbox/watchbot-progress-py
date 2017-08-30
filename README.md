@@ -12,7 +12,7 @@ ECS watchbot's reduce mode allows you to break up a large job into smaller parts
 
 ### 1. Make a list of parts
 
-Each *Part* is a dictionary containing information about the part of the job. For example, a part could represent the URL to a file to be processed
+Each *Part* is a dictionary containing information about a portion of the job. For example, a part could represent the URL to a file to be processed
 
 ```python
 parts = [

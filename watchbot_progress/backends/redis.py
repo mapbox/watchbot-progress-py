@@ -9,7 +9,7 @@ import boto3
 import redis
 
 from watchbot_progress.backends.base import WatchbotProgressBase
-from watchbot_progress.main import JobDoesNotExist
+from watchbot_progress.errors import JobDoesNotExist
 
 
 logger = logging.getLogger(__name__)
