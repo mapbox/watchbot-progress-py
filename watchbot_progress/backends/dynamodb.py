@@ -10,6 +10,7 @@ from watchbot_progress.backends.base import WatchbotProgressBase
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
+from watchbot_progress.errors import JobDoesNotExist 
 
 
 class DynamoProgress(WatchbotProgressBase):
@@ -37,7 +38,7 @@ class DynamoProgress(WatchbotProgressBase):
 
         Parameters
         ----------
-        jobid: string?
+        jobid: string
         part: optional int
 
         Returns
@@ -49,7 +50,9 @@ class DynamoProgress(WatchbotProgressBase):
         remaining = len(item['parts']) if 'parts' in item else 0
         percent = (item['total'] - remaining) / item['total']
 
-        data = {'progress': percent}
+        data = {
+            'jobid': jobid,
+            'progress': percent}
 
         if 'error' in item:
             # failure must have a 'failed' key
@@ -136,8 +139,11 @@ class DynamoProgress(WatchbotProgressBase):
     def list_pending_parts(self, jobid):
         """Pending (incomplete) part numbers for a given jobid
         """
-        # TODO
-        raise NotImplementedError()
+        res = self.db.get_item(Key={'id': jobid}, ConsistentRead=True)
+        if 'Error' in res or 'Item' not in res:
+            raise JobDoesNotExist('jobid {} does not exist')
+        pending = res['Item'].get('parts', [])
+        yield from (int(p) for p in pending)
 
     def list_jobs(self, status=True):
         """Lists of all jobs in the database
@@ -145,5 +151,9 @@ class DynamoProgress(WatchbotProgressBase):
         If status is True, the returned items will be the full status dictionary of each job
         If status is False, the items will be job ids only
         """
-        # TODO
-        raise NotImplementedError()
+        scan = self.db.scan(ConsistentRead=True)
+        for s in scan['Items']:
+            if status:
+                yield self.status(s['id'])
+            else:
+                yield s['id']
