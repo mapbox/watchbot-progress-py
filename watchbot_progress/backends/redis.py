@@ -64,13 +64,15 @@ class RedisProgress(WatchbotProgressBase):
 
         meta = self._decode_dict(meta)
         try:
-            total = int(meta['total'])
+            total = int(meta.pop('total'))
         except KeyError:
             raise JobDoesNotExist('Job does not exist, run set_total first')
 
         percent = (total - remaining) / total
-        data = meta.copy()
+        data = {}
         data.update(
+            metadata=meta.copy(),
+            jobid=jobid,
             progress=percent,
             total=total,
             remaining=remaining)
@@ -134,3 +136,22 @@ class RedisProgress(WatchbotProgressBase):
             Message=json.dumps(message),
             Subject=subject,
             TopicArn=self.topic)
+
+    def list_pending_parts(self, jobid):
+        """Pending (incomplete) part numbers for a given jobid
+        """
+        yield from (int(x) for x in self.redis.smembers(self._parts_key(jobid)))
+
+    def list_jobs(self, status=True):
+        """Lists of all jobs in the database
+
+        If status is True, the returned items will be the full status dictionary of each job
+        If status is False, the items will be job ids only
+        """
+        postfix = '-parts'
+        for key in self.redis.scan_iter(match='*' + postfix):
+            jobid = key.decode('utf-8').replace(postfix, '')
+            if status:
+                yield self.status(jobid)
+            else:
+                yield jobid

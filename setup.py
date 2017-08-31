@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='watchbot_progress',
-    version='0.4.0',
+    version='0.5.0alpha1',
     description=u"Watchbot reduce-mode helpers for python",
     long_description='See https://github.com/mapbox/watchbot-progress-py',
     classifiers=[],
@@ -15,7 +15,7 @@ setup(
     install_requires=['boto3', 'redis'],
     entry_points="""
       [console_scripts]
-      watchbot-progress-py=scripts.cli:main
+      watchbot-progress-py=watchbot_progress.cli:main
       """,
     extras_require={
         'test': ['pytest', 'pytest-cov', 'mock', 'click', 'mockredispy']},
