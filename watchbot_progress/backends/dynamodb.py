@@ -143,7 +143,7 @@ class DynamoProgress(WatchbotProgressBase):
         if 'Error' in res or 'Item' not in res:
             raise JobDoesNotExist('jobid {} does not exist')
         pending = res['Item'].get('parts', [])
-        yield from (int(p) for p in pending)
+        return [int(p) for p in pending]
 
     def list_jobs(self, status=True):
         """Lists of all jobs in the database

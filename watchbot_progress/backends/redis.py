@@ -143,7 +143,7 @@ class RedisProgress(WatchbotProgressBase):
     def list_pending_parts(self, jobid):
         """Pending (incomplete) part numbers for a given jobid
         """
-        yield from (int(x) for x in self.redis.smembers(self._parts_key(jobid)))
+        return [int(x) for x in self.redis.smembers(self._parts_key(jobid))]
 
     def list_jobs(self, status=True):
         """Lists of all jobs in the database
