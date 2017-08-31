@@ -7,10 +7,9 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 
-class WatchbotProgressBase(object):
+class WatchbotProgressBase(metaclass=abc.ABCMeta):
     """Abstract base class for WatchbotProgress objects
     """
-    __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
     def status(self, jobid, part=None):
@@ -56,3 +55,16 @@ class WatchbotProgressBase(object):
     @abc.abstractmethod
     def send_message(self, message, subject):
         """Send SNS message"""
+
+    @abc.abstractmethod
+    def list_pending_parts(self, jobid):
+        """Pending (incomplete) part numbers for a given jobid
+        """
+
+    @abc.abstractmethod
+    def list_jobs(self, status=True):
+        """Lists of all jobs in the database
+
+        If status is True, the returned items will be the full status dictionary of each job
+        If status is False, the items will be job ids only
+        """

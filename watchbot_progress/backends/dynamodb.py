@@ -132,3 +132,18 @@ class DynamoProgress(WatchbotProgressBase):
             Message=json.dumps(message),
             Subject=subject,
             TopicArn=self.topic)
+
+    def list_pending_parts(self, jobid):
+        """Pending (incomplete) part numbers for a given jobid
+        """
+        # TODO
+        raise NotImplementedError()
+
+    def list_jobs(self, status=True):
+        """Lists of all jobs in the database
+
+        If status is True, the returned items will be the full status dictionary of each job
+        If status is False, the items will be job ids only
+        """
+        # TODO
+        raise NotImplementedError()

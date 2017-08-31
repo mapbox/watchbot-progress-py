@@ -30,6 +30,12 @@ class MockProgress(WatchbotProgressBase):
     def set_metadata(self, jobid, metdata):
         return None
 
+    def list_jobs(self, jobid, metdata):
+        return []
+
+    def list_pending_parts(self, jobid, metdata):
+        return []
+
 
 def test_create_jobs(monkeypatch):
     monkeypatch.setenv('WorkTopic', 'abc123')
