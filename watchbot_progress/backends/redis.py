@@ -62,23 +62,26 @@ class RedisProgress(WatchbotProgressBase):
         pipe.scard(self._parts_key(jobid))
         meta, remaining = pipe.execute()
 
+        # Pop select keys off the metadata dict, expose at top level
         meta = self._decode_dict(meta)
+        failed = meta.pop('failed', None)
+        error = meta.pop('error', None)
         try:
             total = int(meta.pop('total'))
         except KeyError:
             raise JobDoesNotExist('Job does not exist, run set_total first')
 
         percent = (total - remaining) / total
-        data = {}
-        data.update(
+        data = dict(
             metadata=meta.copy(),
             jobid=jobid,
             progress=percent,
             total=total,
             remaining=remaining)
 
-        if 'failed' in data:
-            data['failed'] = (data['failed'] == '1')
+        data['failed'] = (failed == '1')
+        if error:
+            data['error'] = error
 
         return data
 

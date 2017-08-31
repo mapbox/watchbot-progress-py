@@ -104,7 +104,7 @@ def test_metadata(parts, monkeypatch):
         p = RedisProgress()
         p.set_total('123', parts)
         p.set_metadata('123', {'test': 'foo'})
-        assert p.status('123')['test'] == 'foo'
+        assert p.status('123')['metadata']['test'] == 'foo'
 
 
 @patch('watchbot_progress.backends.redis.boto3.client')
@@ -113,3 +113,29 @@ def test_send_message(client, monkeypatch):
     client.return_value.publish.return_value = None
     RedisProgress().send_message('I brought you this message', 'oh hai')
     client.assert_called_once_with('sns')
+
+
+@patch('redis.StrictRedis', mock_strict_redis_client)
+def test_list_jobids(parts, monkeypatch):
+    p = RedisProgress(host='localhost', port=6379, db=0, topic_arn='nope')
+    p.set_total('job1', parts)
+    p.set_total('job2', parts)
+    assert list(p.list_jobs(status=False)) == ['job1', 'job2']
+
+
+@patch('redis.StrictRedis', mock_strict_redis_client)
+def test_list_jobs(parts, monkeypatch):
+    p = RedisProgress(host='localhost', port=6379, db=0, topic_arn='nope')
+    p.set_total('job1', parts)
+    p.set_total('job2', parts)
+    assert len(list(p.list_jobs())) == 2
+
+
+@patch('redis.StrictRedis', mock_strict_redis_client)
+def test_list_pending(parts, monkeypatch):
+    p = RedisProgress(host='localhost', port=6379, db=0, topic_arn='nope')
+    jobid = '123'
+    p.set_total(jobid, parts)
+    assert len(list(p.list_pending_parts(jobid))) == 3
+    p.complete_part(jobid, 0)
+    assert len(list(p.list_pending_parts(jobid))) == 2

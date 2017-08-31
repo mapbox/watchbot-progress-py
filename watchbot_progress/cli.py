@@ -2,9 +2,9 @@ from __future__ import division
 
 import json
 import click
-try:
+try:  # pragma: no cover
     from urllib.parse import urlparse
-except ImportError:
+except ImportError:  # pragma: no cover
     from urlparse import urlparse
 
 from watchbot_progress.backends.redis import RedisProgress
@@ -41,7 +41,8 @@ def validate_db(ctx, param, value):
 
 @click.group()
 def main():
-    pass
+    """Main click command
+    """
 
 
 @main.command()
@@ -57,11 +58,14 @@ def info(jobid, database):
 
 @main.command()
 @click.option('--database', '-d', default='dynamodb', nargs=1, callback=validate_db, help=DBHELP)
-@click.option('--hide-completed', is_flag=True, help="show only jobs with pending parts")
-def ls(database, hide_completed):
+@click.option('--status/--jobid', default=True,
+              help="Show full status object, otherwise only jobid")
+@click.option('--hide-completed', is_flag=True,
+              help="show only jobs with pending parts")
+def ls(database, status, hide_completed):
     '''Scans the database for jobs and lists them as a jobids
     '''
-    jobs = database.list_jobs(status=True)
+    jobs = database.list_jobs(status=status)
     for job in jobs:
         if not hide_completed or (hide_completed and job['remaining'] > 0):
             click.echo(job)
@@ -70,7 +74,8 @@ def ls(database, hide_completed):
 @main.command()
 @click.argument('jobid', type=str)
 @click.option('--database', '-d', default='dynamodb', nargs=1, callback=validate_db, help=DBHELP)
-@click.option('--array', is_flag=True, help='Output as JSON array [Default: line-delimited]')
+@click.option('--array', is_flag=True,
+              help='Output as JSON array [Default: line-delimited]')
 def pending(jobid, database, array):
     '''Streams out all pending part numbers for a given jobid
     '''
