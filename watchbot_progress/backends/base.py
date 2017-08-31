@@ -6,8 +6,12 @@ import logging
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
+# Python 2 and 3 compat
+# see https://stackoverflow.com/a/38668373
+ABC = abc.ABCMeta('ABC', (object,), {'__slots__': ()})
 
-class WatchbotProgressBase(metaclass=abc.ABCMeta):
+
+class WatchbotProgressBase(ABC):
     """Abstract base class for WatchbotProgress objects
     """
 
