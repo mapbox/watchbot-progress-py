@@ -1,6 +1,8 @@
-import pytest
-from watchbot_progress import WatchbotProgress
 from mock import patch
+
+import pytest
+
+from watchbot_progress.backends.dynamodb import DynamoProgress as WatchbotProgress
 
 parts = [
     {'source': 'a.tif'},
@@ -8,7 +10,7 @@ parts = [
     {'source': 'c.tif'}]
 
 
-@patch('watchbot_progress.boto3.resource')
+@patch('watchbot_progress.backends.dynamodb.boto3.resource')
 def test_status(client, monkeypatch):
     monkeypatch.setenv('WorkTopic', 'abc123')
     monkeypatch.setenv('ProgressTable', 'arn::table/foo')
@@ -29,7 +31,7 @@ def test_status(client, monkeypatch):
     assert s['reduceSent']
 
 
-@patch('watchbot_progress.boto3.resource')
+@patch('watchbot_progress.backends.dynamodb.boto3.resource')
 @pytest.mark.parametrize('mock_item, expected', [
     ({'Item': {'parts': [0, 1, 2, 3], 'total': 4}}, 0),
     ({'Item': {'parts': [2, 3], 'total': 4}}, 0.5),
@@ -45,7 +47,7 @@ def test_status_progress(client, mock_item, expected, monkeypatch):
     assert s['progress'] == expected
 
 
-@patch('watchbot_progress.boto3.resource')
+@patch('watchbot_progress.backends.dynamodb.boto3.resource')
 def test_set_total(client, monkeypatch):
     monkeypatch.setenv('WorkTopic', 'abc123')
     monkeypatch.setenv('ProgressTable', 'arn::table/foo')
@@ -54,7 +56,7 @@ def test_set_total(client, monkeypatch):
     WatchbotProgress().set_total('123', parts)
 
 
-@patch('watchbot_progress.boto3.resource')
+@patch('watchbot_progress.backends.dynamodb.boto3.resource')
 def test_fail_job(client, monkeypatch):
     monkeypatch.setenv('WorkTopic', 'abc123')
     monkeypatch.setenv('ProgressTable', 'arn::table/foo')
@@ -63,7 +65,7 @@ def test_fail_job(client, monkeypatch):
     WatchbotProgress().fail_job('123', 'Failed because it is bad')
 
 
-@patch('watchbot_progress.boto3.client')
+@patch('watchbot_progress.backends.dynamodb.boto3.client')
 def test_send_message(client, monkeypatch):
     monkeypatch.setenv('WorkTopic', 'abc123')
     monkeypatch.setenv('ProgressTable', 'arn::table/foo')
@@ -72,7 +74,7 @@ def test_send_message(client, monkeypatch):
     WatchbotProgress().send_message('I brought you this message', 'oh hai')
 
 
-@patch('watchbot_progress.boto3.resource')
+@patch('watchbot_progress.backends.dynamodb.boto3.resource')
 def test_complete_part(client, monkeypatch):
     monkeypatch.setenv('WorkTopic', 'abc123')
     monkeypatch.setenv('ProgressTable', 'arn::table/foo')
@@ -83,7 +85,7 @@ def test_complete_part(client, monkeypatch):
     assert s is True
 
 
-@patch('watchbot_progress.boto3.resource')
+@patch('watchbot_progress.backends.dynamodb.boto3.resource')
 def test_incomplete_part(client, monkeypatch):
     monkeypatch.setenv('WorkTopic', 'abc123')
     monkeypatch.setenv('ProgressTable', 'arn::table/foo')
@@ -94,7 +96,7 @@ def test_incomplete_part(client, monkeypatch):
     assert s is False
 
 
-@patch('watchbot_progress.boto3.resource')
+@patch('watchbot_progress.backends.dynamodb.boto3.resource')
 def test_set_metadata(client, monkeypatch):
     monkeypatch.setenv('WorkTopic', 'abc123')
     monkeypatch.setenv('ProgressTable', 'arn::table/foo')
