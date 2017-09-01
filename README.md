@@ -12,7 +12,7 @@ ECS watchbot's reduce mode allows you to break up a large job into smaller parts
 
 ### 1. Make a list of parts
 
-Each *Part* is a dictionary containing information about a portion of the job. For example, a part could represent the URL to a file to be processed
+Each *Part* is a dictionary containing information about a portion of the job. For example, a part could represent the URL to a file to be processed. The part dict must be JSON-serializable.
 
 ```python
 parts = [
@@ -96,28 +96,21 @@ with Part(partid, jobid, progress=p):
 For more information about writing a backend database, see [docs/WatchbotProgress-interface.md](docs/WatchbotProgress-interface.md)
 
 
-## CLI
+## Command line interface
 
-A `cli` is provided to check the status of jobs in a table.
+The `watchbot-progress-py` command is provided to check the status of jobs in a table.
 
-### Get the status of a specific jobid:
 ```
-Usage: watchbot-progress-py info [OPTIONS] TABLE JOBID
+$ watchbot-progress-py --help
+Usage: watchbot-progress-py [OPTIONS] COMMAND [ARGS]...
 
-  Returns the progress of a specific jobid for a watchbot-progress job
+  Main click command
 
 Options:
   --help  Show this message and exit.
-```
 
-### Get the status of all jobs in a table:
-```
-Usage: watchbot-progress-py ls [OPTIONS] TABLE
-
-  Scans the given watchbot-progress table and returns their individual
-  progress info
-
-Options:
-  --hide-completed
-  --help            Show this message and exit.
+Commands:
+  info     Returns the status of a specific jobid for a...
+  ls       Scans the database for jobs and lists them as...
+  pending  Streams out all pending part numbers for a...
 ```
