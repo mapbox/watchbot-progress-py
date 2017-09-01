@@ -1,3 +1,9 @@
+0.5.0
+-----
+- Refactor WatchbotProgress class to provide pluggable backends (#12)
+- Implement a Redis backend (#13)
+- Command line interface tools rewritten to use the backend interface.
+
 0.4.0
 -----
 - BREAKING CHANGE: the `Part` context manager will not fail the entire job by default.
