@@ -8,18 +8,11 @@ import uuid
 
 from watchbot_progress.backends.dynamodb import DynamoProgress
 from watchbot_progress.backends.base import WatchbotProgressBase
+from watchbot_progress.errors import ProgressTypeError, JobFailed
 
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
-
-
-class JobFailed(RuntimeError):
-    """Skip, the reduce mode job has already been marked as failed. """
-
-
-class ProgressTypeError(TypeError):
-    """Progress argument is not of the correct type"""
 
 #
 # The main public interfaces, create_job and Part
@@ -54,7 +47,8 @@ def create_job(parts, jobid=None, workers=8, progress=None, metadata=None):
         progress.set_metadata(jobid, metadata)
 
     annotated_parts = []
-    for partid, part in enumerate(parts):
+    for partid, original_part in enumerate(parts):
+        part = original_part.copy()
         part.update(partid=partid)
         part.update(jobid=jobid)
         part.update(metadata=metadata)

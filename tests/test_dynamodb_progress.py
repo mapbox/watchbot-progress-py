@@ -3,6 +3,8 @@ from mock import patch
 import pytest
 
 from watchbot_progress.backends.dynamodb import DynamoProgress as WatchbotProgress
+from watchbot_progress.errors import JobDoesNotExist 
+
 
 parts = [
     {'source': 'a.tif'},
@@ -105,3 +107,37 @@ def test_set_metadata(client, monkeypatch):
     client.return_value.Table.return_value.update_item.return_value = item
     WatchbotProgress().set_metadata('123', {'a': 1})
     assert client.called
+
+
+@patch('watchbot_progress.backends.dynamodb.boto3.resource')
+def test_set_list_jobs(client, monkeypatch):
+    monkeypatch.setenv('WorkTopic', 'abc123')
+    monkeypatch.setenv('ProgressTable', 'arn::table/foo')
+
+    item = {'id': '123', 'total': 4, 'error': True}
+    client.return_value.Table.return_value.scan.return_value = {'Items': [item]}
+    client.return_value.Table.return_value.get_item.return_value = {'Item': item}
+
+    jobs = list(WatchbotProgress().list_jobs())
+    assert len(jobs) == 1
+    assert jobs[0]['jobid'] == '123'
+
+    jobs = list(WatchbotProgress().list_jobs(status=False))
+    assert len(jobs) == 1
+    assert jobs[0] == '123'
+
+
+@patch('watchbot_progress.backends.dynamodb.boto3.resource')
+def test_set_list_pending(client, monkeypatch):
+    monkeypatch.setenv('WorkTopic', 'abc123')
+    monkeypatch.setenv('ProgressTable', 'arn::table/foo')
+
+    item = {'id': '123', 'parts': [0, 1, 2]}
+    client.return_value.Table.return_value.get_item.return_value = {'Item': item}
+
+    parts = list(WatchbotProgress().list_pending_parts('123'))
+    assert len(parts) == 3
+
+    client.return_value.Table.return_value.get_item.return_value = {}
+    with pytest.raises(JobDoesNotExist):
+        parts = list(WatchbotProgress().list_pending_parts('123'))

@@ -1,6 +1,6 @@
 import pytest
 from watchbot_progress import create_job, Part
-from watchbot_progress.main import JobFailed, ProgressTypeError
+from watchbot_progress.errors import JobFailed, ProgressTypeError
 from watchbot_progress.backends.base import WatchbotProgressBase
 from mock import patch
 
@@ -29,6 +29,12 @@ class MockProgress(WatchbotProgressBase):
 
     def set_metadata(self, jobid, metdata):
         return None
+
+    def list_jobs(self, jobid, metdata):
+        return []
+
+    def list_pending_parts(self, jobid, metdata):
+        return []
 
 
 def test_create_jobs(monkeypatch):
