@@ -139,7 +139,16 @@ class RedisProgress(WatchbotProgressBase):
     def list_pending_parts(self, jobid):
         """Pending (incomplete) part numbers for a given jobid
         """
-        return [int(x) for x in self.redis.smembers(self._parts_key(jobid))]
+        pipe = self.redis.pipeline()
+        pipe.hgetall(self._metadata_key(jobid))
+        pipe.smembers(self._parts_key(jobid))
+        meta, parts = pipe.execute()
+
+        meta = self._decode_dict(meta)
+        if 'total' not in meta.keys():
+            raise JobDoesNotExist(f'jobid {jobid} does not exist')
+
+        return [int(x) for x in parts]
 
     def list_jobs(self, status=True):
         """Yields all jobs in the database
