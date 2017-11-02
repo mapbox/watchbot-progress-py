@@ -20,13 +20,23 @@ class RedisProgress(WatchbotProgressBase):
     """Sets up objects for reduce mode job tracking with SNS and Redis
     """
 
-    def __init__(self, topic_arn=None, host='localhost', port=6379, db=0):
+    def __init__(self, topic_arn=None, host='localhost', port=6379, db=0, **kwargs):
+        """Redis-backed progress object
+
+        Parameters
+        ----------
+        topic_arn
+        host: string, redis host
+        port: integer
+        db: integer, redis db number
+        kwargs: passed directly to redis.StrictRedis connection
+        """
         # SNS Messages
         self.sns = boto3.client('sns')
         self.topic = topic_arn if topic_arn else os.environ['WorkTopic']
 
         # Redis
-        self.redis = redis.StrictRedis(host=host, port=port, db=db)
+        self.redis = redis.StrictRedis(host=host, port=port, db=db, **kwargs)
 
     def _metadata_key(self, jobid):
         return '{}-metadata'.format(jobid)
