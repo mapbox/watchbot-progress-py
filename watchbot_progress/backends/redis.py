@@ -156,7 +156,7 @@ class RedisProgress(WatchbotProgressBase):
 
         meta = self._decode_dict(meta)
         if 'total' not in meta.keys():
-            raise JobDoesNotExist(f'jobid {jobid} does not exist')
+            raise JobDoesNotExist('jobid {} does not exist'.format(jobid))
 
         return [int(x) for x in parts]
 
