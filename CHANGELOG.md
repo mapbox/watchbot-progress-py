@@ -1,3 +1,8 @@
+0.6.0
+-----
+- Pass kwargs to redis connection
+- raise exception for missing jobid
+
 0.5.0
 -----
 - Refactor WatchbotProgress class to provide pluggable backends (#12)

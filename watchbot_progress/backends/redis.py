@@ -20,13 +20,23 @@ class RedisProgress(WatchbotProgressBase):
     """Sets up objects for reduce mode job tracking with SNS and Redis
     """
 
-    def __init__(self, topic_arn=None, host='localhost', port=6379, db=0):
+    def __init__(self, topic_arn=None, host='localhost', port=6379, db=0, **kwargs):
+        """Redis-backed progress object
+
+        Parameters
+        ----------
+        topic_arn
+        host: string, redis host
+        port: integer
+        db: integer, redis db number
+        kwargs: passed directly to redis.StrictRedis connection
+        """
         # SNS Messages
         self.sns = boto3.client('sns')
         self.topic = topic_arn if topic_arn else os.environ['WorkTopic']
 
         # Redis
-        self.redis = redis.StrictRedis(host=host, port=port, db=db)
+        self.redis = redis.StrictRedis(host=host, port=port, db=db, **kwargs)
 
     def _metadata_key(self, jobid):
         return '{}-metadata'.format(jobid)
@@ -139,12 +149,21 @@ class RedisProgress(WatchbotProgressBase):
     def list_pending_parts(self, jobid):
         """Pending (incomplete) part numbers for a given jobid
         """
-        return [int(x) for x in self.redis.smembers(self._parts_key(jobid))]
+        pipe = self.redis.pipeline()
+        pipe.hgetall(self._metadata_key(jobid))
+        pipe.smembers(self._parts_key(jobid))
+        meta, parts = pipe.execute()
+
+        meta = self._decode_dict(meta)
+        if 'total' not in meta.keys():
+            raise JobDoesNotExist('jobid {} does not exist'.format(jobid))
+
+        return [int(x) for x in parts]
 
     def list_jobs(self, status=True):
-        """Lists of all jobs in the database
+        """Yields all jobs in the database
 
-        If status is True, the returned items will be the full status dictionary of each job
+        If status is True, the yielded items will be the full status dictionary of each job
         If status is False, the items will be job ids only
         """
         postfix = '-parts'
