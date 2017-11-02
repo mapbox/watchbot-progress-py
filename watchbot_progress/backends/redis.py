@@ -142,9 +142,9 @@ class RedisProgress(WatchbotProgressBase):
         return [int(x) for x in self.redis.smembers(self._parts_key(jobid))]
 
     def list_jobs(self, status=True):
-        """Lists of all jobs in the database
+        """Yields all jobs in the database
 
-        If status is True, the returned items will be the full status dictionary of each job
+        If status is True, the yielded items will be the full status dictionary of each job
         If status is False, the items will be job ids only
         """
         postfix = '-parts'
