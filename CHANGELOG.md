@@ -1,3 +1,8 @@
+0.7.0
+-----
+- Send SNS messages in batch using boto3 thread safe method
+
+
 0.6.0
 -----
 - Pass kwargs to redis connection
