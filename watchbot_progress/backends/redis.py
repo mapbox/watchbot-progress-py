@@ -1,11 +1,9 @@
 from __future__ import division
 from __future__ import absolute_import
 
-import json
 import logging
 import os
 
-import boto3
 import redis
 
 from watchbot_progress.backends.base import WatchbotProgressBase
@@ -31,8 +29,7 @@ class RedisProgress(WatchbotProgressBase):
         db: integer, redis db number
         kwargs: passed directly to redis.StrictRedis connection
         """
-        # SNS Messages
-        self.sns = boto3.client('sns')
+        # SNS Topic
         self.topic = topic_arn if topic_arn else os.environ['WorkTopic']
 
         # Redis
@@ -138,13 +135,6 @@ class RedisProgress(WatchbotProgressBase):
         """
         for key, value in metadata.items():
             self.redis.hset(self._metadata_key(jobid), key, value)
-
-    def send_message(self, message, subject):
-        """Function wrapper to facilitate partial application"""
-        return self.sns.publish(
-            Message=json.dumps(message),
-            Subject=subject,
-            TopicArn=self.topic)
 
     def list_pending_parts(self, jobid):
         """Pending (incomplete) part numbers for a given jobid
