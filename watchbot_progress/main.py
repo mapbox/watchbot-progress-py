@@ -9,6 +9,7 @@ import uuid
 from watchbot_progress.backends.dynamodb import DynamoProgress
 from watchbot_progress.backends.base import WatchbotProgressBase
 from watchbot_progress.errors import ProgressTypeError, JobFailed
+from watchbot_progress.utils import chunker, sns_worker, aws_send_message
 
 
 logger = logging.getLogger(__name__)
@@ -54,10 +55,13 @@ def create_job(parts, jobid=None, workers=8, progress=None, metadata=None):
         part.update(metadata=metadata)
         annotated_parts.append(part)
 
+    # Create chunks of messages to be processed by each thread
+    _chunks = chunker(annotated_parts, 1000)
+
     # Send SNS message for each part, concurrently
-    _send_message = partial(progress.send_message, subject='map')
+    _send_message = partial(sns_worker, topic=progress.topic, subject='map')
     with futures.ThreadPoolExecutor(max_workers=workers) as executor:
-        executor.map(_send_message, annotated_parts)
+        executor.map(_send_message, _chunks)
 
     return jobid
 
@@ -108,4 +112,4 @@ def Part(jobid, partid, progress=None, fail_job_on=(), **kwargs):
             message = {
                 'jobid': jobid,
                 'metadata': metadata}
-            progress.send_message(message, subject='reduce')
+            aws_send_message(message, progress.topic, subject='reduce')
