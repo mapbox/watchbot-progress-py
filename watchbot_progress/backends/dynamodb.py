@@ -1,16 +1,15 @@
 from __future__ import division
 
-import json
 import logging
 import os
 
 import boto3
 
 from watchbot_progress.backends.base import WatchbotProgressBase
+from watchbot_progress.errors import JobDoesNotExist
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
-from watchbot_progress.errors import JobDoesNotExist 
 
 
 class DynamoProgress(WatchbotProgressBase):
@@ -22,8 +21,7 @@ class DynamoProgress(WatchbotProgressBase):
     """
 
     def __init__(self, table_arn=None, topic_arn=None):
-        # SNS Messages
-        self.sns = boto3.client('sns')
+        # SNS Topic
         self.topic = topic_arn if topic_arn else os.environ['WorkTopic']
 
         # DynamoDB
@@ -128,13 +126,6 @@ class DynamoProgress(WatchbotProgressBase):
             ExpressionAttributeNames={'#m': 'metadata'},
             ExpressionAttributeValues={':m': metadata},
             UpdateExpression='set #m = :m')
-
-    def send_message(self, message, subject):
-        """Function wrapper to facilitate partial application"""
-        return self.sns.publish(
-            Message=json.dumps(message),
-            Subject=subject,
-            TopicArn=self.topic)
 
     def list_pending_parts(self, jobid):
         """Pending (incomplete) part numbers for a given jobid

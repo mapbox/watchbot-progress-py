@@ -57,10 +57,6 @@ class WatchbotProgressBase(ABC):
         """
 
     @abc.abstractmethod
-    def send_message(self, message, subject):
-        """Send SNS message"""
-
-    @abc.abstractmethod
     def list_pending_parts(self, jobid):
         """Pending (incomplete) part numbers for a given jobid
         """

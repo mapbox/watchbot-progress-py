@@ -107,14 +107,6 @@ def test_metadata(parts, monkeypatch):
         assert p.status('123')['metadata']['test'] == 'foo'
 
 
-@patch('watchbot_progress.backends.redis.boto3.client')
-def test_send_message(client, monkeypatch):
-    monkeypatch.setenv('WorkTopic', 'abc123')
-    client.return_value.publish.return_value = None
-    RedisProgress().send_message('I brought you this message', 'oh hai')
-    client.assert_called_once_with('sns')
-
-
 @patch('redis.StrictRedis', mock_strict_redis_client)
 def test_list_jobids(parts, monkeypatch):
     p = RedisProgress(host='localhost', port=6379, db=0, topic_arn='nope')

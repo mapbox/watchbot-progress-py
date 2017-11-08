@@ -10,9 +10,13 @@ parts = [
 
 
 @patch('redis.StrictRedis', mock_strict_redis_client)
-@patch('watchbot_progress.backends.redis.boto3.client')
-def test_progress_one_done(client, monkeypatch):
+@patch('watchbot_progress.main.sns_worker')
+@patch('watchbot_progress.main.aws_send_message')
+def test_progress_one_done(aws_send_message, sns_worker, monkeypatch):
         monkeypatch.setenv('WorkTopic', 'abc123')
+
+        sns_worker.side_effect = [True]
+
         progress = RedisProgress()
 
         jobid = create_job(parts, progress=progress)
@@ -22,14 +26,16 @@ def test_progress_one_done(client, monkeypatch):
         assert progress.status(jobid)['remaining'] == 2
 
         # 3 map messages, No reduce message sent
-        assert client.return_value.publish.call_count == 3
-        sns_args = client.return_value.publish.call_args[1]
-        assert sns_args['Subject'] == 'map'
+        sns_worker.assert_called_once()
+        assert len(sns_worker.call_args[0][0]) == 3
+        assert sns_worker.call_args[1].get('subject') == 'map'
+        aws_send_message.assert_not_called()
 
 
 @patch('redis.StrictRedis', mock_strict_redis_client)
-@patch('watchbot_progress.backends.redis.boto3.client')
-def test_progress_all_done(client, monkeypatch):
+@patch('watchbot_progress.main.sns_worker')
+@patch('watchbot_progress.main.aws_send_message')
+def test_progress_all_done(aws_send_message, sns_worker, monkeypatch):
         monkeypatch.setenv('WorkTopic', 'abc123')
         progress = RedisProgress()
 
@@ -41,6 +47,8 @@ def test_progress_all_done(client, monkeypatch):
         assert progress.status(jobid)['remaining'] == 0
 
         # 3 map messages and 1 reduce message sent
-        assert client.return_value.publish.call_count == 4
-        sns_args = client.return_value.publish.call_args[1]
-        assert sns_args['Subject'] == 'reduce'
+        sns_worker.assert_called_once()
+        assert len(sns_worker.call_args[0][0]) == 3
+        assert sns_worker.call_args[1].get('subject') == 'map'
+        aws_send_message.assert_called_once()
+        assert aws_send_message.call_args[1].get('subject') == 'reduce'
