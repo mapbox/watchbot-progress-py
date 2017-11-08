@@ -3,7 +3,7 @@ from mock import patch
 import pytest
 
 from watchbot_progress.backends.dynamodb import DynamoProgress as WatchbotProgress
-from watchbot_progress.errors import JobDoesNotExist 
+from watchbot_progress.errors import JobDoesNotExist
 
 
 parts = [
@@ -65,15 +65,6 @@ def test_fail_job(client, monkeypatch):
     client.return_value.Table.return_value.update_item.return_value = None
 
     WatchbotProgress().fail_job('123', 'Failed because it is bad')
-
-
-@patch('watchbot_progress.backends.dynamodb.boto3.client')
-def test_send_message(client, monkeypatch):
-    monkeypatch.setenv('WorkTopic', 'abc123')
-    monkeypatch.setenv('ProgressTable', 'arn::table/foo')
-    client.return_value.publish.return_value = None
-
-    WatchbotProgress().send_message('I brought you this message', 'oh hai')
 
 
 @patch('watchbot_progress.backends.dynamodb.boto3.resource')
