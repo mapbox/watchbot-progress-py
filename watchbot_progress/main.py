@@ -57,7 +57,7 @@ def create_job(parts, jobid=None, workers=25, progress=None, metadata=None):
         annotated_parts.append(part)
 
     # Create chunks of messages to be processed by each thread
-    chunk_size = math.ceil(len(annotated_parts) / workers)
+    chunk_size = max(math.ceil(len(annotated_parts) / workers), workers)
     _chunks = chunker(annotated_parts, chunk_size)
 
     # Send SNS message for each part, concurrently
