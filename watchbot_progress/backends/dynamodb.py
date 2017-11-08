@@ -1,16 +1,15 @@
 from __future__ import division
 
-import json
 import logging
 import os
 
 import boto3
 
 from watchbot_progress.backends.base import WatchbotProgressBase
+from watchbot_progress.errors import JobDoesNotExist
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
-from watchbot_progress.errors import JobDoesNotExist
 
 
 class DynamoProgress(WatchbotProgressBase):
