@@ -4,6 +4,7 @@ from concurrent import futures
 from contextlib import contextmanager
 from functools import partial
 import logging
+import math
 import uuid
 
 from watchbot_progress.backends.dynamodb import DynamoProgress
@@ -20,7 +21,7 @@ logger.addHandler(logging.NullHandler())
 #
 
 
-def create_job(parts, jobid=None, workers=8, progress=None, metadata=None):
+def create_job(parts, jobid=None, workers=25, progress=None, metadata=None):
     """Create a reduce mode job
 
     Handles all the details of reduce-mode accounting (SNS, partid and jobid)
@@ -56,7 +57,8 @@ def create_job(parts, jobid=None, workers=8, progress=None, metadata=None):
         annotated_parts.append(part)
 
     # Create chunks of messages to be processed by each thread
-    _chunks = chunker(annotated_parts, 1000)
+    chunk_size = math.ceil(len(annotated_parts) / workers)
+    _chunks = chunker(annotated_parts, chunk_size)
 
     # Send SNS message for each part, concurrently
     _send_message = partial(sns_worker, topic=progress.topic, subject='map')
