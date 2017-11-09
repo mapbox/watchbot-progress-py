@@ -1,7 +1,8 @@
 0.7.0
 -----
 - Send SNS messages in batch using boto3 thread safe method
-
+- add a utils module
+- Implement delete method for redis backend
 
 0.6.0
 -----
