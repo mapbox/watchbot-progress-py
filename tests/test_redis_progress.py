@@ -124,6 +124,15 @@ def test_list_jobs(parts, monkeypatch):
 
 
 @patch('redis.StrictRedis', mock_strict_redis_client)
+def test_list_jobs_meta(parts, monkeypatch):
+    p = RedisProgress(host='localhost', port=6379, db=0, topic_arn='nope')
+    p.set_total('job1', parts)
+    p.set_total('job2', parts)
+    p.redis.delete('job1-parts')  # job1-metdata should remain thus still be in list
+    assert len(list(p.list_jobs())) == 2
+
+
+@patch('redis.StrictRedis', mock_strict_redis_client)
 def test_list_pending(parts, monkeypatch):
     p = RedisProgress(host='localhost', port=6379, db=0, topic_arn='nope')
     jobid = '123'
@@ -131,3 +140,48 @@ def test_list_pending(parts, monkeypatch):
     assert len(list(p.list_pending_parts(jobid))) == 3
     p.complete_part(jobid, 0)
     assert len(list(p.list_pending_parts(jobid))) == 2
+
+
+@patch('redis.StrictRedis', mock_strict_redis_client)
+def test_list_pending_nojobs(parts, monkeypatch):
+    p = RedisProgress(host='localhost', port=6379, db=0, topic_arn='nope')
+    jobid = '123'
+    p.set_total(jobid, parts)
+    assert len(list(p.list_pending_parts(jobid))) == 3
+    p.delete(jobid)
+    with pytest.raises(JobDoesNotExist):
+        p.list_pending_parts(jobid)
+
+
+@patch('redis.StrictRedis', mock_strict_redis_client)
+def test_delete(parts, monkeypatch):
+    p = RedisProgress(host='localhost', port=6379, db=0, topic_arn='nope')
+    jobid = '123'
+    p.set_total(jobid, parts)
+    assert 'total' in p.status(jobid)
+    p.delete(jobid)
+    with pytest.raises(JobDoesNotExist):
+        p.status(jobid)
+
+
+@patch('redis.StrictRedis', mock_strict_redis_client)
+def test_delete_when_done(parts, monkeypatch):
+    p = RedisProgress(host='localhost', port=6379, db=0, topic_arn='nope', delete_when_done=True)
+    jobid = '123'
+    p.set_total(jobid, [parts[0]])
+    assert len(list(p.list_pending_parts(jobid))) == 1
+    p.complete_part(jobid, 0)
+    assert not p.redis.hgetall('123-metadata')
+    with pytest.raises(JobDoesNotExist):
+        p.status(jobid)
+
+
+@patch('redis.StrictRedis', mock_strict_redis_client)
+def test_no_delete_when_done(parts, monkeypatch):
+    p = RedisProgress(host='localhost', port=6379, db=0, topic_arn='nope', delete_when_done=False)
+    jobid = '123'
+    p.set_total(jobid, [parts[0]])
+    assert len(list(p.list_pending_parts(jobid))) == 1
+    p.complete_part(jobid, 0)
+    assert 'total' in p._decode_dict(p.redis.hgetall('123-metadata'))
+    assert p.status(jobid)['remaining'] == 0  # status still works

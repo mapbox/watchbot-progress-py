@@ -18,7 +18,8 @@ class RedisProgress(WatchbotProgressBase):
     """Sets up objects for reduce mode job tracking with SNS and Redis
     """
 
-    def __init__(self, topic_arn=None, host='localhost', port=6379, db=0, **kwargs):
+    def __init__(self, topic_arn=None, host='localhost', port=6379, db=0,
+                 delete_when_done=False, **kwargs):
         """Redis-backed progress object
 
         Parameters
@@ -34,6 +35,7 @@ class RedisProgress(WatchbotProgressBase):
 
         # Redis
         self.redis = redis.StrictRedis(host=host, port=port, db=db, **kwargs)
+        self.delete_when_done = delete_when_done
 
     def _metadata_key(self, jobid):
         return '{}-metadata'.format(jobid)
@@ -114,6 +116,16 @@ class RedisProgress(WatchbotProgressBase):
         self.redis.hset(self._metadata_key(jobid), 'error', reason)
         self.redis.hset(self._metadata_key(jobid), 'failed', 1)
 
+    def delete(self, jobid):
+        """Delete the reduce job
+        """
+        # Delete parts and metadata, atomically
+        pipe = self.redis.pipeline()
+        pipe.delete(self._parts_key(jobid))
+        pipe.delete(self._metadata_key(jobid))
+        parts_del, meta_del = pipe.execute()
+        return (parts_del, meta_del)
+
     def complete_part(self, jobid, partid):
         """Mark part as complete
 
@@ -128,7 +140,12 @@ class RedisProgress(WatchbotProgressBase):
         pipe.scard(self._parts_key(jobid))
         _, remaining = pipe.execute()
 
-        return remaining == 0
+        if remaining == 0:
+            if self.delete_when_done:
+                self.delete(jobid)
+            return True
+        else:
+            return False
 
     def set_metadata(self, jobid, metadata):
         """Associate arbitrary metadata with a particular map-reduce job
@@ -156,7 +173,7 @@ class RedisProgress(WatchbotProgressBase):
         If status is True, the yielded items will be the full status dictionary of each job
         If status is False, the items will be job ids only
         """
-        postfix = '-parts'
+        postfix = '-metadata'  # see _metadata_key method
         for key in self.redis.scan_iter(match='*' + postfix):
             jobid = key.decode('utf-8').replace(postfix, '')
             if status:

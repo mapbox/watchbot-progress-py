@@ -127,6 +127,11 @@ class DynamoProgress(WatchbotProgressBase):
             ExpressionAttributeValues={':m': metadata},
             UpdateExpression='set #m = :m')
 
+    def delete(self, jobid):
+        """Delete the reduce job
+        """
+        raise NotImplementedError("delete not implemented for dynamodb yet")
+
     def list_pending_parts(self, jobid):
         """Pending (incomplete) part numbers for a given jobid
         """
