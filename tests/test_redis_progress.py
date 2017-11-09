@@ -172,6 +172,8 @@ def test_delete_when_done(parts, monkeypatch):
     assert len(list(p.list_pending_parts(jobid))) == 1
     p.complete_part(jobid, 0)
     assert not p.redis.hgetall('123-metadata')
+    with pytest.raises(JobDoesNotExist):
+        p.status(jobid)
 
 
 @patch('redis.StrictRedis', mock_strict_redis_client)
@@ -182,3 +184,4 @@ def test_no_delete_when_done(parts, monkeypatch):
     assert len(list(p.list_pending_parts(jobid))) == 1
     p.complete_part(jobid, 0)
     assert 'total' in p._decode_dict(p.redis.hgetall('123-metadata'))
+    assert p.status(jobid)['remaining'] == 0  # status still works
