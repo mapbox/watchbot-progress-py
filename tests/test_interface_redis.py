@@ -2,6 +2,8 @@ from watchbot_progress import create_job, Part
 from watchbot_progress.backends.redis import RedisProgress
 from mock import patch
 from mockredis import mock_strict_redis_client
+import pytest
+
 
 parts = [
     {'source': 'a.tif'},
@@ -52,3 +54,31 @@ def test_progress_all_done(aws_send_message, sns_worker, monkeypatch):
         assert sns_worker.call_args[1].get('subject') == 'map'
         aws_send_message.assert_called_once()
         assert aws_send_message.call_args[1].get('subject') == 'reduce'
+
+
+@patch('redis.StrictRedis', mock_strict_redis_client)
+@patch('watchbot_progress.main.sns_worker')
+@patch('watchbot_progress.main.aws_send_message')
+def test_progress_reduce_once(aws_send_message, sns_worker, monkeypatch):
+        """Ensure that reduce message is only sent once,
+        even if parts are completed multiple times
+        """
+        monkeypatch.setenv('WorkTopic', 'abc123')
+        progress = RedisProgress()
+        jobid = create_job(parts, progress=progress)
+
+        for i in range(3):
+            with Part(jobid, i, progress=progress):
+                pass
+        aws_send_message.assert_called_once()
+        assert aws_send_message.call_args[1].get('subject') == 'reduce'
+
+        aws_send_message.reset_mock()
+
+        # Finishing already completed parts should not trigger reduce message, only warn
+        with pytest.warns(UserWarning) as record:
+            for i in range(3):
+                with Part(jobid, i, progress=progress):
+                    pass
+        assert 'skip' in record[0].message.args[0]
+        aws_send_message.assert_not_called()

@@ -6,6 +6,7 @@ from functools import partial
 import logging
 import math
 import uuid
+import warnings
 
 from watchbot_progress.backends.dynamodb import DynamoProgress
 from watchbot_progress.backends.base import WatchbotProgressBase
@@ -110,8 +111,14 @@ def Part(jobid, partid, progress=None, fail_job_on=(), **kwargs):
         all_done = progress.complete_part(jobid, partid)
         if all_done:
             status = progress.status(jobid)
-            metadata = status.get('metadata', None)
+            metadata = status.get('metadata', {})
             message = {
                 'jobid': jobid,
                 'metadata': metadata}
-            aws_send_message(message, progress.topic, subject='reduce')
+
+            already_sent = metadata.get('reduce_message_sent', False)
+            if already_sent:
+                warnings.warn('skip reduce message, already sent for job {}'.format(jobid))
+            else:
+                aws_send_message(message, progress.topic, subject='reduce')
+                progress.set_metadata(jobid, {'reduce_message_sent': True})
