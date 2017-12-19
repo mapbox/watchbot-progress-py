@@ -1,3 +1,7 @@
+0.8.0
+-----
+- Modify the Part context manager to ensure the reduce message gets sent only once per job
+
 0.7.0
 -----
 - Send SNS messages in batch using boto3 thread safe method
