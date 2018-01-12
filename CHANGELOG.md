@@ -1,3 +1,7 @@
+0.9.0
+-----
+- Adds ability to provide a custom callback to the Part context manager in place of sending a reduce message
+
 0.8.0
 -----
 - Modify the Part context manager to ensure the reduce message gets sent only once per job
