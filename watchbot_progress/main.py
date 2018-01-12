@@ -70,7 +70,7 @@ def create_job(parts, jobid=None, workers=25, progress=None, metadata=None):
 
 
 @contextmanager
-def Part(jobid, partid, progress=None, fail_job_on=(), **kwargs):
+def Part(jobid, partid, progress=None, fail_job_on=(), on_reduce=None, **kwargs):
     """Context manager to handle parts of an ecs-watchbot reduce job.
 
     Params
@@ -84,6 +84,9 @@ def Part(jobid, partid, progress=None, fail_job_on=(), **kwargs):
         Defaults to DynamoProgress
     fail_job_on: sequence
         Exception classes which should mark job as failed
+    on_reduce: function
+        custom callback to run instead of sending
+        reduce message to topic
     kwargs: dict
         absorbs additional keywords allowing part dicts
         to be unpacked as input to Part
@@ -120,5 +123,8 @@ def Part(jobid, partid, progress=None, fail_job_on=(), **kwargs):
             if already_sent:
                 warnings.warn('skip reduce message, already sent for job {}'.format(jobid))
             else:
-                aws_send_message(message, progress.topic, subject='reduce')
+                if on_reduce is None:
+                    aws_send_message(message, progress.topic, subject='reduce')
+                else:
+                    on_reduce(message, progress.topic, subject='reduce')
                 progress.set_metadata(jobid, {'reduce_message_sent': True})

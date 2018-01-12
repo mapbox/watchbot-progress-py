@@ -1,6 +1,6 @@
 from watchbot_progress import create_job, Part
 from watchbot_progress.backends.redis import RedisProgress
-from mock import patch
+from mock import patch, Mock
 from mockredis import mock_strict_redis_client
 import pytest
 
@@ -54,6 +54,28 @@ def test_progress_all_done(aws_send_message, sns_worker, monkeypatch):
         assert sns_worker.call_args[1].get('subject') == 'map'
         aws_send_message.assert_called_once()
         assert aws_send_message.call_args[1].get('subject') == 'reduce'
+
+
+@patch('redis.StrictRedis', mock_strict_redis_client)
+@patch('watchbot_progress.main.sns_worker')
+def test_progress_all_done_custom_on_reduce(sns_worker, monkeypatch):
+        monkeypatch.setenv('WorkTopic', 'abc123')
+        progress = RedisProgress()
+        on_reduce = Mock()
+        jobid = create_job(parts, progress=progress)
+        for i in range(3):
+            with Part(jobid, i, progress=progress, on_reduce=on_reduce):
+                pass
+
+        assert progress.status(jobid)['remaining'] == 0
+
+        # 3 map messages and 1 reduce message sent
+        sns_worker.assert_called_once()
+        assert len(sns_worker.call_args[0][0]) == 3
+        assert sns_worker.call_args[1].get('subject') == 'map'
+
+        on_reduce.assert_called_once()
+        assert on_reduce.call_args[1].get('subject') == 'reduce'
 
 
 @patch('redis.StrictRedis', mock_strict_redis_client)

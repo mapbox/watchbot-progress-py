@@ -2,7 +2,7 @@ import pytest
 from watchbot_progress import create_job, Part
 from watchbot_progress.errors import JobFailed, ProgressTypeError
 from watchbot_progress.backends.base import WatchbotProgressBase
-from mock import patch
+from mock import patch, Mock
 
 parts = [
     {'source': 'a.tif'},
@@ -74,6 +74,23 @@ def test_Part_job_done(aws_send_message, monkeypatch):
         pass
     aws_send_message.assert_called_once()
     assert aws_send_message.call_args[1].get('subject') == 'reduce'
+
+
+def test_Part_job_done_on_reduce_callback(monkeypatch):
+    monkeypatch.setenv('WorkTopic', 'abc123')
+    monkeypatch.setenv('ProgressTable', 'arn::table/foo')
+
+    class CustomProgress(MockProgress):
+        def complete_part(self, jobid, partid):
+            return True
+
+    on_reduce = Mock()
+
+    with Part(jobid='123', partid=1, progress=CustomProgress(), on_reduce=on_reduce):
+        pass
+
+    on_reduce.assert_called_once()
+    assert on_reduce.call_args[1].get('subject') == 'reduce'
 
 
 @patch('watchbot_progress.main.aws_send_message')
