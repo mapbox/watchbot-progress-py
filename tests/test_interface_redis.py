@@ -10,6 +10,22 @@ parts = [
     {'source': 'b.tif'},
     {'source': 'c.tif'}]
 
+@pytest.fixture
+def CustomCallback():
+    class OnReduce():
+        def __init__(self):
+            self.called = False
+            pass
+        def on_reduce(self, message, topic, subject):
+            self.called = True
+            self.message = message
+            self.topic = topic
+            self.subject = subject
+        def assert_called_once(self):
+            assert self.called
+
+    return OnReduce()
+
 
 @patch('redis.StrictRedis', mock_strict_redis_client)
 @patch('watchbot_progress.main.sns_worker')
@@ -54,23 +70,6 @@ def test_progress_all_done(aws_send_message, sns_worker, monkeypatch):
         assert sns_worker.call_args[1].get('subject') == 'map'
         aws_send_message.assert_called_once()
         assert aws_send_message.call_args[1].get('subject') == 'reduce'
-
-
-@pytest.fixture
-def CustomCallback():
-    class OnReduce():
-        def __init__(self):
-            self.called = False
-            pass
-        def on_reduce(self, message, topic, subject):
-            self.called = True
-            self.message = message
-            self.topic = topic
-            self.subject = subject
-        def assert_called_once(self):
-            assert self.called
-
-    return OnReduce()
 
 
 @patch('redis.StrictRedis', mock_strict_redis_client)

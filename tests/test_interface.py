@@ -37,6 +37,23 @@ class MockProgress(WatchbotProgressBase):
         return []
 
 
+@pytest.fixture
+def CustomCallback():
+    class OnReduce():
+        def __init__(self):
+            self.called = False
+            pass
+        def on_reduce(self, message, topic, subject):
+            self.called = True
+            self.message = message
+            self.topic = topic
+            self.subject = subject
+        def assert_called_once(self):
+            assert self.called
+
+    return OnReduce()
+
+
 @patch('watchbot_progress.main.sns_worker')
 def test_create_jobs(sns_worker, monkeypatch):
     monkeypatch.setenv('WorkTopic', 'abc123')
@@ -75,21 +92,6 @@ def test_Part_job_done(aws_send_message, monkeypatch):
     aws_send_message.assert_called_once()
     assert aws_send_message.call_args[1].get('subject') == 'reduce'
 
-@pytest.fixture
-def CustomCallback():
-    class OnReduce():
-        def __init__(self):
-            self.called = False
-            pass
-        def on_reduce(self, message, topic, subject):
-            self.called = True
-            self.message = message
-            self.topic = topic
-            self.subject = subject
-        def assert_called_once(self):
-            assert self.called
-
-    return OnReduce()
 
 def test_Part_job_done_on_reduce_callback(CustomCallback, monkeypatch):
     monkeypatch.setenv('WorkTopic', 'abc123')
@@ -103,9 +105,9 @@ def test_Part_job_done_on_reduce_callback(CustomCallback, monkeypatch):
         pass
 
     CustomCallback.assert_called_once()
-    # assert CustomCallback.message == {'jobid': '123', 'metadata':{}}
-    # assert CustomCallback.topic is None
-    # assert CustomCallback.subject == 'reduce'
+    assert CustomCallback.message == {'jobid': '123', 'metadata':{}}
+    assert CustomCallback.topic is None
+    assert CustomCallback.subject == 'reduce'
 
 
 @patch('watchbot_progress.main.aws_send_message')
