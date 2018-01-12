@@ -2,7 +2,7 @@ import pytest
 from watchbot_progress import create_job, Part
 from watchbot_progress.errors import JobFailed, ProgressTypeError
 from watchbot_progress.backends.base import WatchbotProgressBase
-from mock import patch
+from mock import patch, Mock
 
 parts = [
     {'source': 'a.tif'},
@@ -35,23 +35,6 @@ class MockProgress(WatchbotProgressBase):
 
     def list_pending_parts(self, jobid, metdata):
         return []
-
-
-@pytest.fixture
-def CustomCallback():
-    class OnReduce():
-        def __init__(self):
-            self.called = False
-            pass
-        def on_reduce(self, message, topic, subject):
-            self.called = True
-            self.message = message
-            self.topic = topic
-            self.subject = subject
-        def assert_called_once(self):
-            assert self.called
-
-    return OnReduce()
 
 
 @patch('watchbot_progress.main.sns_worker')
@@ -93,7 +76,7 @@ def test_Part_job_done(aws_send_message, monkeypatch):
     assert aws_send_message.call_args[1].get('subject') == 'reduce'
 
 
-def test_Part_job_done_on_reduce_callback(CustomCallback, monkeypatch):
+def test_Part_job_done_on_reduce_callback(monkeypatch):
     monkeypatch.setenv('WorkTopic', 'abc123')
     monkeypatch.setenv('ProgressTable', 'arn::table/foo')
 
@@ -101,13 +84,13 @@ def test_Part_job_done_on_reduce_callback(CustomCallback, monkeypatch):
         def complete_part(self, jobid, partid):
             return True
 
-    with Part(jobid='123', partid=1, progress=CustomProgress(), on_reduce=CustomCallback.on_reduce):
+    on_reduce = Mock()
+
+    with Part(jobid='123', partid=1, progress=CustomProgress(), on_reduce=on_reduce):
         pass
 
-    CustomCallback.assert_called_once()
-    assert CustomCallback.message == {'jobid': '123', 'metadata':{}}
-    assert CustomCallback.topic is None
-    assert CustomCallback.subject == 'reduce'
+    on_reduce.assert_called_once()
+    assert on_reduce.call_args[1].get('subject') == 'reduce'
 
 
 @patch('watchbot_progress.main.aws_send_message')
