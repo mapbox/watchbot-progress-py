@@ -1,9 +1,5 @@
 language: python
 cache: pip
-env:
-  global:
-    - AWS_DEFAULT_REGION=us-east-1
-
 before_script:
   - pip install tox coveralls
 script:  tox
