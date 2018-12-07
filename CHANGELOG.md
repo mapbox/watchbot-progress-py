@@ -1,3 +1,7 @@
+0.9.1
+-----
+- Pin Redis to 2.x
+
 0.9.0
 -----
 - Adds ability to provide a custom callback to the Part context manager in place of sending a reduce message
