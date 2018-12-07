@@ -18,6 +18,6 @@ setup(
       watchbot-progress-py=watchbot_progress.cli:main
       """,
     extras_require={
-        'test': ['pytest', 'pytest-cov', 'mock', 'click', 'mockredispy']},
+        'test': ['pytest', 'pytest-cov', 'mock', 'click', 'mockredispy', 'tox', 'coveralls']},
     include_package_data=True,
     zip_safe=False)
